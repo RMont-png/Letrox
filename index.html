@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Letrox</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Tela de Menu -->
+        <div id="menu-screen">
+            <div class="menu-content">
+                <h1 class="game-title">LETROX</h1>
+                <div class="records-box">
+                    <p>Maior Nível: <span id="record-level">1</span></p>
+                    <p>Recorde: <span id="record-score">0</span> pts</p>
+                </div>
+                <div class="menu-controls">
+                    <button id="play-btn" class="primary-btn">▶ Jogar</button>
+                    <button id="rules-btn" class="secondary-btn">📖 Regras</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tela do Jogo -->
+        <div id="game-screen" class="hidden">
+            <header>
+                <button id="back-btn" class="nav-btn">⬅ Voltar</button>
+                <div class="stats-container">
+                    <div class="stats">
+                        <div class="level">Nível <span id="level-display">1</span></div>
+                        <div class="score">Pontos: <span id="score-display">0</span></div>
+                    </div>
+                    <button id="next-level-btn" class="hidden">Próximo Nível</button>
+                </div>
+            </header>
+
+            <main id="board-container">
+                <div id="words-board">
+                    <!-- As palavras ocultas serão renderizadas aqui -->
+                </div>
+            </main>
+
+            <footer>
+                <div id="input-area">
+                    <!-- Letras selecionadas aparecem aqui -->
+                </div>
+                
+                <div class="controls">
+                    <button id="shuffle-btn">🔀 Embaralhar</button>
+                    <button id="submit-btn">Enviar</button>
+                </div>
+
+                <div id="deck-area">
+                    <!-- Letras disponíveis aparecem aqui -->
+                </div>
+            </footer>
+        </div>
+    </div>
+    
+    <!-- Modal de Fim de Jogo ou Avisos -->
+    <div id="modal" class="hidden">
+        <div class="modal-content">
+            <h2 id="modal-title">Mensagem</h2>
+            <p id="modal-text">Texto</p>
+            <button id="modal-btn">Continuar</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
