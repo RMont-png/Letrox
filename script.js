@@ -233,9 +233,11 @@ function renderBoard() {
     document.documentElement.style.setProperty('--slot-size', `${slotSize}px`);
     document.documentElement.style.setProperty('--slot-font', `${slotSize * 0.65}px`);
 
-    // Calcula espaço vertical baseado na tela real do dispositivo (para evitar falha quando div está oculta)
-    let boardHeight = window.innerHeight - 320; 
-    if (boardHeight < 200) boardHeight = 200;
+    // Mede a altura REAL e exata do container para calcular os limites da coluna
+    let boardHeight = ui.wordsBoard.parentElement.clientHeight;
+    if (!boardHeight || boardHeight < 100) {
+        boardHeight = 400; // fallback de segurança
+    }
 
     const itemHeight = slotSize + 4; // tamanho + gap da coluna
     const maxItemsPerColumn = Math.max(1, Math.floor((boardHeight - 10) / itemHeight));

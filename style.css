@@ -286,7 +286,7 @@ footer {
 
 #input-area {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: center;
     gap: clamp(4px, 2vw, 10px);
     min-height: 50px;
@@ -303,13 +303,17 @@ footer {
 
 #input-area.compact .input-letter {
     width: clamp(28px, 9vw, 40px);
-    height: clamp(28px, 9vw, 40px);
+    height: auto;
     font-size: clamp(0.9rem, 3.5vw, 1.3rem);
 }
 
 .input-letter {
+    flex-shrink: 1;
+    min-width: 0;
+    aspect-ratio: 1 / 1;
     width: clamp(36px, 12vw, 50px);
-    height: clamp(36px, 12vw, 50px);
+    height: auto;
+    max-height: 50px;
     background: linear-gradient(145deg, #1e293b, #0f172a);
     border: 1px solid var(--primary);
     border-radius: 10px;
@@ -371,7 +375,7 @@ footer {
 #deck-area {
     display: flex;
     justify-content: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: clamp(4px, 2vw, 10px);
     width: 100%;
 }
@@ -382,13 +386,17 @@ footer {
 
 #deck-area.compact .deck-letter {
     width: clamp(28px, 9vw, 40px);
-    height: clamp(28px, 9vw, 40px);
+    height: auto;
     font-size: clamp(0.9rem, 3.5vw, 1.3rem);
 }
 
 .deck-letter {
+    flex-shrink: 1;
+    min-width: 0;
+    aspect-ratio: 1 / 1;
     width: clamp(36px, 12vw, 50px);
-    height: clamp(36px, 12vw, 50px);
+    height: auto;
+    max-height: 50px;
     background: linear-gradient(145deg, #334155, #1e293b);
     border: 1px solid var(--glass-border);
     border-radius: 12px;
