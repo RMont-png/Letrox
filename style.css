@@ -286,8 +286,9 @@ footer {
 
 #input-area {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
-    gap: 8px;
+    gap: clamp(4px, 2vw, 10px);
     min-height: 50px;
     padding: 10px;
     border-radius: 12px;
@@ -296,16 +297,26 @@ footer {
     transition: background-color 0.3s, border-color 0.3s;
 }
 
+#input-area.compact {
+    gap: clamp(2px, 1vw, 5px);
+}
+
+#input-area.compact .input-letter {
+    width: clamp(28px, 9vw, 40px);
+    height: clamp(28px, 9vw, 40px);
+    font-size: clamp(0.9rem, 3.5vw, 1.3rem);
+}
+
 .input-letter {
-    width: 45px;
-    height: 45px;
+    width: clamp(36px, 12vw, 50px);
+    height: clamp(36px, 12vw, 50px);
     background: linear-gradient(145deg, #1e293b, #0f172a);
     border: 1px solid var(--primary);
     border-radius: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 4vw, 1.6rem);
     font-weight: 800;
     text-transform: uppercase;
     color: white;

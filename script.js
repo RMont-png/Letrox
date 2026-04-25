@@ -128,10 +128,12 @@ function loadLevel() {
     gameState.masterWordFound = false;
     gameState.revealed = false;
 
-    if (targetLength >= 8) {
+    if (targetLength >= 7) {
         ui.deckArea.classList.add('compact');
+        ui.inputArea.classList.add('compact');
     } else {
         ui.deckArea.classList.remove('compact');
+        ui.inputArea.classList.remove('compact');
     }
 
     // Encontra todos os anagramas possíveis
