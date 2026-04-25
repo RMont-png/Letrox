@@ -361,30 +361,30 @@ footer {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 10px;
-    min-height: 60px;
+    gap: clamp(4px, 2vw, 10px);
+    width: 100%;
 }
 
 #deck-area.compact {
-    gap: 5px;
+    gap: clamp(2px, 1vw, 5px);
 }
 
 #deck-area.compact .deck-letter {
-    width: 40px;
-    height: 40px;
-    font-size: 1.3rem;
+    width: clamp(28px, 9vw, 40px);
+    height: clamp(28px, 9vw, 40px);
+    font-size: clamp(0.9rem, 3.5vw, 1.3rem);
 }
 
 .deck-letter {
-    width: 50px;
-    height: 50px;
+    width: clamp(36px, 12vw, 50px);
+    height: clamp(36px, 12vw, 50px);
     background: linear-gradient(145deg, #334155, #1e293b);
     border: 1px solid var(--glass-border);
     border-radius: 12px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.6rem;
+    font-size: clamp(1.2rem, 4vw, 1.6rem);
     font-weight: 800;
     text-transform: uppercase;
     color: white;

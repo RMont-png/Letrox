@@ -225,17 +225,15 @@ function renderBoard() {
     else if (totalWords <= 24) slotSize = 24;
     else if (totalWords <= 30) slotSize = 22;
     else if (totalWords <= 40) slotSize = 18;
-    else slotSize = 16;
+    else if (totalWords <= 55) slotSize = 14;
+    else slotSize = 11;
 
     document.documentElement.style.setProperty('--slot-size', `${slotSize}px`);
     document.documentElement.style.setProperty('--slot-font', `${slotSize * 0.65}px`);
 
-    // Calcula espaço vertical disponível para evitar quebra prematura de coluna
-    let boardHeight = ui.wordsBoard.parentElement.clientHeight;
-    if (!boardHeight || boardHeight < 100) {
-        boardHeight = window.innerHeight - 300; // Estimativa segura caso a tela esteja oculta
-        if (boardHeight < 200) boardHeight = 200;
-    }
+    // Calcula espaço vertical baseado na tela real do dispositivo (para evitar falha quando div está oculta)
+    let boardHeight = window.innerHeight - 320; 
+    if (boardHeight < 200) boardHeight = 200;
 
     const itemHeight = slotSize + 4; // tamanho + gap da coluna
     const maxItemsPerColumn = Math.max(1, Math.floor((boardHeight - 10) / itemHeight));
