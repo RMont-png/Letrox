@@ -8,7 +8,9 @@ const gameState = {
     deckLetters: [],
     inputLetters: [],
     masterWordFound: false,
-    revealed: false
+    revealed: false,
+    power1Used: false,
+    power2Used: false
 };
 
 // Elementos da UI
@@ -31,7 +33,12 @@ const ui = {
     modal: document.getElementById('modal'),
     modalTitle: document.getElementById('modal-title'),
     modalText: document.getElementById('modal-text'),
-    modalBtn: document.getElementById('modal-btn')
+    modalBtn: document.getElementById('modal-btn'),
+    hintBtn: document.getElementById('hint-btn'),
+    powersModal: document.getElementById('powers-modal'),
+    closePowersBtn: document.getElementById('close-powers-btn'),
+    powerFirstLetter: document.getElementById('power-first-letter'),
+    powerRandomLetter: document.getElementById('power-random-letter')
 };
 
 // Inicialização
@@ -127,14 +134,8 @@ function loadLevel() {
     gameState.currentMasterWord = masterWords[Math.floor(Math.random() * masterWords.length)].toUpperCase();
     gameState.masterWordFound = false;
     gameState.revealed = false;
-
-    if (targetLength >= 7) {
-        ui.deckArea.classList.add('compact');
-        ui.inputArea.classList.add('compact');
-    } else {
-        ui.deckArea.classList.remove('compact');
-        ui.inputArea.classList.remove('compact');
-    }
+    gameState.power1Used = false;
+    gameState.power2Used = false;
 
     // Encontra todos os anagramas possíveis
     gameState.validWordsForLevel = findValidAnagrams(gameState.currentMasterWord);
@@ -270,6 +271,9 @@ function renderBoard() {
                 } else if (item.revealed) {
                     slot.classList.add('revealed');
                 }
+            } else if (item.revealedIndexes && item.revealedIndexes.includes(i)) {
+                slot.textContent = item.word[i];
+                slot.classList.add('hint-revealed');
             }
             rowDiv.appendChild(slot);
         }
@@ -347,7 +351,7 @@ function renderDeck(hiddenIndices = [], hideAll = false) {
  * @param {Object} options - { duration, arcY, onDone }
  */
 function animateFLIPGhost(char, startRect, destRect, options = {}) {
-    const { duration = 260, arcY = 0, onDone } = options;
+    const { duration = 260, arcY = 0, delay = 0, onDone } = options;
 
     const ghost = document.createElement('div');
     ghost.className = 'deck-letter';
@@ -383,8 +387,9 @@ function animateFLIPGhost(char, startRect, destRect, options = {}) {
 
     ghost.animate(keyframes, {
         duration,
+        delay,
         easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-        fill: 'forwards'
+        fill: 'both'
     }).onfinish = () => {
         if (onDone) onDone(); // revela destino ANTES de remover o ghost
         ghost.remove();
@@ -486,22 +491,21 @@ function shuffleDeck() {
         const delay     = newIdx * 30; 
         const arcY      = (Math.random() - 0.5) * 50;
 
-        setTimeout(() => {
-            animateFLIPGhost(char, startRect, endRect, {
-                duration: GHOST_DURATION,
-                arcY,
-                onDone: () => {
-                    const s = newSpheres[newIdx];
-                    if (s) {
-                        s.style.opacity = '1';
-                        requestAnimationFrame(() => {
-                            s.style.transition = '';
-                            s.style.opacity = '';
-                        });
-                    }
+        animateFLIPGhost(char, startRect, endRect, {
+            duration: GHOST_DURATION,
+            delay: delay,
+            arcY,
+            onDone: () => {
+                const s = newSpheres[newIdx];
+                if (s) {
+                    s.style.opacity = '1';
+                    requestAnimationFrame(() => {
+                        s.style.transition = '';
+                        s.style.opacity = '';
+                    });
                 }
-            });
-        }, delay);
+            }
+        });
     });
 }
 
@@ -587,9 +591,7 @@ function submitWord() {
                 ui.nextLevelBtn.classList.remove('hidden');
 
                 setTimeout(() => {
-                    const appEl = document.getElementById('app');
-                    appEl.classList.add('screen-shake');
-                    appEl.addEventListener('animationend', () => appEl.classList.remove('screen-shake'), { once: true });
+                    // Sem screen-shake a pedido
 
                     allRows.forEach(row => {
                         if (row.dataset.word === wordObj.word) {
@@ -691,10 +693,10 @@ function shuffleArray(array) {
  * Dispara partículas de confete do centro da tela.
  */
 function fireConfetti() {
-    const colors = ['#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#f43f5e'];
-    const count  = 60;
-    const cx = window.innerWidth  / 2;
-    const cy = window.innerHeight / 2;
+    const count = 150;
+    const colors = ['#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#3b82f6'];
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight;
 
     for (let i = 0; i < count; i++) {
         const el = document.createElement('div');
@@ -703,12 +705,13 @@ function fireConfetti() {
         el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
         document.body.appendChild(el);
 
-        const angle  = Math.random() * Math.PI * 2;
-        const speed  = 120 + Math.random() * 200;
-        const vx     = Math.cos(angle) * speed;
-        const vy     = Math.sin(angle) * speed - 150; // impulso para cima
+        // Espalha por todo o arco superior
+        const angle  = Math.random() * Math.PI + Math.PI; 
+        const speed  = 300 + Math.random() * 600;
+        const vx     = Math.cos(angle) * speed * (window.innerWidth / 400); // Espalha mais horizontalmente
+        const vy     = Math.sin(angle) * speed - 200; // Impulso para cima
         const rotate = Math.random() * 720 - 360;
-        const size   = 6 + Math.random() * 8;
+        const size   = 10 + Math.random() * 15; // Confetes maiores
 
         el.style.width  = size + 'px';
         el.style.height = size + 'px';
@@ -719,12 +722,12 @@ function fireConfetti() {
                 opacity: 1
             },
             {
-                transform: `translate(${cx + vx}px, ${cy + vy + 300}px) rotate(${rotate}deg)`,
+                transform: `translate(${cx + vx}px, ${cy + vy}px) rotate(${rotate}deg)`,
                 opacity: 0
             }
         ], {
-            duration: 900 + Math.random() * 600,
-            delay:    Math.random() * 200,
+            duration: 1500 + Math.random() * 1000,
+            delay:    Math.random() * 300,
             easing:   'cubic-bezier(0.23, 1, 0.32, 1)',
             fill:     'forwards'
         }).onfinish = () => el.remove();
@@ -738,6 +741,78 @@ ui.nextLevelBtn.addEventListener('click', nextLevel);
 ui.playBtn.addEventListener('click', startGame);
 ui.rulesBtn.addEventListener('click', showRules);
 ui.backBtn.addEventListener('click', backToMenu);
+
+// Poderes
+ui.hintBtn.addEventListener('click', () => {
+    ui.powerFirstLetter.disabled = gameState.power1Used;
+    ui.powerRandomLetter.disabled = gameState.power2Used;
+    ui.powersModal.classList.remove('hidden');
+});
+
+ui.closePowersBtn.addEventListener('click', () => ui.powersModal.classList.add('hidden'));
+
+ui.powerFirstLetter.addEventListener('click', () => {
+    if (gameState.power1Used) return;
+    gameState.power1Used = true;
+    ui.powersModal.classList.add('hidden');
+    
+    let delayCounter = 0;
+    gameState.validWordsForLevel.forEach(wordObj => {
+        if (!wordObj.found) {
+            if (!wordObj.revealedIndexes) wordObj.revealedIndexes = [];
+            if (!wordObj.revealedIndexes.includes(0)) {
+                wordObj.revealedIndexes.push(0);
+                
+                const row = ui.wordsBoard.querySelector(`.word-row[data-word="${wordObj.word}"]`);
+                if (row) {
+                    const slot = row.querySelectorAll('.letter-slot')[0];
+                    if (slot) {
+                        setTimeout(() => {
+                            slot.textContent = wordObj.word[0];
+                            slot.classList.add('hint-revealed', 'flip-reveal');
+                            slot.addEventListener('animationend', () => slot.classList.remove('flip-reveal'), { once: true });
+                        }, delayCounter * 80);
+                        delayCounter++;
+                    }
+                }
+            }
+        }
+    });
+});
+
+ui.powerRandomLetter.addEventListener('click', () => {
+    if (gameState.power2Used) return;
+    gameState.power2Used = true;
+    ui.powersModal.classList.add('hidden');
+    
+    let delayCounter = 0;
+    gameState.validWordsForLevel.forEach(wordObj => {
+        if (!wordObj.found) {
+            if (!wordObj.revealedIndexes) wordObj.revealedIndexes = [];
+            const availableIndexes = [];
+            for (let i = 0; i < wordObj.length; i++) {
+                if (!wordObj.revealedIndexes.includes(i)) availableIndexes.push(i);
+            }
+            if (availableIndexes.length > 0) {
+                const randomIdx = availableIndexes[Math.floor(Math.random() * availableIndexes.length)];
+                wordObj.revealedIndexes.push(randomIdx);
+                
+                const row = ui.wordsBoard.querySelector(`.word-row[data-word="${wordObj.word}"]`);
+                if (row) {
+                    const slot = row.querySelectorAll('.letter-slot')[randomIdx];
+                    if (slot) {
+                        setTimeout(() => {
+                            slot.textContent = wordObj.word[randomIdx];
+                            slot.classList.add('hint-revealed', 'flip-reveal');
+                            slot.addEventListener('animationend', () => slot.classList.remove('flip-reveal'), { once: true });
+                        }, delayCounter * 80);
+                        delayCounter++;
+                    }
+                }
+            }
+        }
+    });
+});
 
 // Inicializa
 initGame();
