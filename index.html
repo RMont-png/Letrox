@@ -27,14 +27,12 @@
         <!-- Tela do Jogo -->
         <div id="game-screen" class="hidden">
             <header>
-                <button id="back-btn" class="nav-btn">⬅ Voltar</button>
-                <div class="stats-container">
-                    <div class="stats">
-                        <div class="level">Nível <span id="level-display">1</span></div>
-                        <div class="score">Pontos: <span id="score-display">0</span></div>
-                    </div>
-                    <button id="next-level-btn" class="hidden">Próximo Nível</button>
+                <button id="back-btn" class="nav-btn" aria-label="Voltar">⬅</button>
+                <div class="stats">
+                    <div class="level">🚩 <span id="level-display">1</span></div>
+                    <div class="score">⭐ <span id="score-display">000</span></div>
                 </div>
+                <button id="next-level-btn" disabled>Próxima Fase</button>
             </header>
 
             <main id="board-container">

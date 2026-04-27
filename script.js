@@ -80,8 +80,8 @@ function startGame() {
     gameState.score = 0;
     ui.menuScreen.classList.add('hidden');
     ui.gameScreen.classList.remove('hidden');
-    ui.backBtn.textContent = "⬅ Voltar";
-    ui.scoreDisplay.textContent = "0";
+    ui.backBtn.textContent = "⬅";
+    ui.scoreDisplay.textContent = "000";
     loadLevel();
 }
 
@@ -102,7 +102,7 @@ function backToMenu() {
         gameState.revealed = true;
         missedWords.forEach(w => w.revealed = true);
         renderBoard();
-        ui.backBtn.textContent = "Sair →";
+        ui.backBtn.textContent = "🚪";
         return;
     }
 
@@ -153,7 +153,7 @@ function loadLevel() {
 
     // Atualiza a UI
     ui.levelDisplay.textContent = gameState.level;
-    ui.nextLevelBtn.classList.add('hidden');
+    ui.nextLevelBtn.disabled = true;
     renderBoard();
     renderInput();
     renderDeck();
@@ -305,6 +305,10 @@ function renderInput(hiddenIndex = -1) {
 
             // Encontra o índice real no array para clicar corretamente
             letterDiv.onclick = () => moveFromInputToDeck(i);
+            letterDiv.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                moveFromInputToDeck(i);
+            }, { passive: false });
             wrapper.appendChild(letterDiv);
         }
         ui.inputArea.appendChild(wrapper);
@@ -336,6 +340,10 @@ function renderDeck(hiddenIndices = [], hideAll = false) {
         letterDiv.onclick = () => {
             if (!isUsed) moveFromDeckToInput(index, char);
         };
+        letterDiv.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!isUsed) moveFromDeckToInput(index, char);
+        }, { passive: false });
         wrapper.appendChild(letterDiv);
         ui.deckArea.appendChild(wrapper);
     });
@@ -588,7 +596,7 @@ function submitWord() {
 
             if (wordObj.isMaster && !gameState.masterWordFound) {
                 gameState.masterWordFound = true;
-                ui.nextLevelBtn.classList.remove('hidden');
+                ui.nextLevelBtn.disabled = false;
 
                 setTimeout(() => {
                     // Sem screen-shake a pedido
@@ -643,7 +651,7 @@ function addScore(wordLength) {
         points += 50;
     }
     gameState.score += points;
-    ui.scoreDisplay.textContent = gameState.score;
+    ui.scoreDisplay.textContent = gameState.score.toString().padStart(3, '0');
 }
 
 function nextLevel() {
@@ -790,7 +798,7 @@ ui.powerRandomLetter.addEventListener('click', () => {
         if (!wordObj.found) {
             if (!wordObj.revealedIndexes) wordObj.revealedIndexes = [];
             const availableIndexes = [];
-            for (let i = 0; i < wordObj.length; i++) {
+            for (let i = 1; i < wordObj.length; i++) {
                 if (!wordObj.revealedIndexes.includes(i)) availableIndexes.push(i);
             }
             if (availableIndexes.length > 0) {
