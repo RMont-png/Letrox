@@ -81,7 +81,7 @@ function startGame() {
     ui.menuScreen.classList.add('hidden');
     ui.gameScreen.classList.remove('hidden');
     ui.backBtn.textContent = "⬅";
-    ui.scoreDisplay.textContent = "000";
+    ui.scoreDisplay.textContent = "0000";
     loadLevel();
 }
 
@@ -103,6 +103,7 @@ function backToMenu() {
         missedWords.forEach(w => w.revealed = true);
         renderBoard();
         ui.backBtn.textContent = "🚪";
+        disableFooter(true);
         return;
     }
 
@@ -154,6 +155,7 @@ function loadLevel() {
     // Atualiza a UI
     ui.levelDisplay.textContent = gameState.level;
     ui.nextLevelBtn.disabled = true;
+    disableFooter(false);
     renderBoard();
     renderInput();
     renderDeck();
@@ -231,19 +233,32 @@ function renderBoard() {
     else if (totalWords <= 55) slotSize = 14;
     else slotSize = 11;
 
-    document.documentElement.style.setProperty('--slot-size', `${slotSize}px`);
-    document.documentElement.style.setProperty('--slot-font', `${slotSize * 0.65}px`);
-
-    // Mede a altura REAL e exata do container para calcular os limites da coluna
     let boardHeight = ui.wordsBoard.parentElement.clientHeight;
     if (!boardHeight || boardHeight < 100) {
         boardHeight = 400; // fallback de segurança
     }
 
-    const itemHeight = slotSize + 4; // tamanho + gap da coluna
-    const maxItemsPerColumn = Math.max(1, Math.floor((boardHeight - 10) / itemHeight));
+    let itemHeight = slotSize + 4; // tamanho + gap da coluna
+    let maxItemsPerColumn = Math.max(1, Math.floor((boardHeight - 10) / itemHeight));
+    let numCols = Math.ceil(totalWords / maxItemsPerColumn);
 
-    const numCols = Math.ceil(totalWords / maxItemsPerColumn);
+    // Garante que a largura de todas as colunas caiba na tela
+    const maxWordLen = gameState.currentMasterWord.length;
+    const availableWidth = window.innerWidth - 30 - ((numCols - 1) * 15); // 30px padding, 15px gap entre cols
+    const maxSlotWidth = (availableWidth / numCols) / maxWordLen - 2; // -2px gap entre letras
+
+    if (slotSize > maxSlotWidth) {
+        slotSize = Math.max(10, Math.floor(maxSlotWidth));
+        
+        // Recalcula colunas caso o slot tenha diminuído (pode caber mais itens agora)
+        itemHeight = slotSize + 4;
+        maxItemsPerColumn = Math.max(1, Math.floor((boardHeight - 10) / itemHeight));
+        numCols = Math.ceil(totalWords / maxItemsPerColumn);
+    }
+
+    document.documentElement.style.setProperty('--slot-size', `${slotSize}px`);
+    document.documentElement.style.setProperty('--slot-font', `${slotSize * 0.65}px`);
+
     const wordsPerCol = Math.ceil(totalWords / numCols);
     let currentColDiv;
 
@@ -321,7 +336,7 @@ function renderDeck(hiddenIndices = [], hideAll = false) {
     }
     ui.deckArea.innerHTML = '';
     gameState.deckLetters.forEach((char, index) => {
-        const isUsed = gameState.inputLetters.some(item => item.deckIndex === index);
+        const isUsed = gameState.inputLetters.some(item => item && item.deckIndex === index);
 
         const wrapper = document.createElement('div');
         wrapper.className = 'sphere-wrapper';
@@ -409,8 +424,15 @@ function moveFromDeckToInput(deckIndex, char) {
     const deckWrapper = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${deckIndex}']`);
     const startRect = deckWrapper ? deckWrapper.getBoundingClientRect() : null;
 
-    gameState.inputLetters.push({ char, deckIndex });
-    const inputIdx = gameState.inputLetters.length - 1;
+    let emptyIndex = gameState.inputLetters.findIndex(item => item === null);
+    if (emptyIndex === -1) {
+        if (gameState.inputLetters.length >= gameState.deckLetters.length) return;
+        emptyIndex = gameState.inputLetters.length;
+        gameState.inputLetters.push({ char, deckIndex });
+    } else {
+        gameState.inputLetters[emptyIndex] = { char, deckIndex };
+    }
+    const inputIdx = emptyIndex;
     
     // Renderiza input com a nova letra já invisível
     renderInput(inputIdx);
@@ -442,7 +464,7 @@ function moveFromInputToDeck(inputIndex) {
     const startRect = inputWrapper ? inputWrapper.getBoundingClientRect() : null;
     const item = gameState.inputLetters[inputIndex];
 
-    gameState.inputLetters.splice(inputIndex, 1);
+    gameState.inputLetters[inputIndex] = null;
     renderInput();
     // Renderiza o deck já com a esfera destino oculta (sem transição) para evitar flash
     renderDeck(item ? item.deckIndex : -1);
@@ -480,9 +502,14 @@ function shuffleDeck() {
     // 3. Aplica a permutação ao array de letras
     gameState.deckLetters = perm.map(i => oldChars[i]);
 
-    // 4. Limpa input e re-renderiza o deck com todas as esferas já ocultas (sem transição)
-    gameState.inputLetters = [];
-    renderInput();
+    // Atualiza os deckIndex no inputLetters para refletir a nova permutação
+    gameState.inputLetters.forEach(item => {
+        if (item) {
+            const newIndex = perm.findIndex(oldIdx => oldIdx === item.deckIndex);
+            item.deckIndex = newIndex;
+        }
+    });
+
     renderDeck(-1, true); 
 
     // 5. Captura as referências das esferas e as NOVAS posições dos wrappers
@@ -493,6 +520,9 @@ function shuffleDeck() {
 
     // 6. Para cada nova posição, lança um ghost com arco vertical
     perm.forEach((oldIdx, newIdx) => {
+        const isUsed = gameState.inputLetters.some(item => item && item.deckIndex === newIdx);
+        if (isUsed) return; // Não anima bolinhas que já estão no input
+
         const char      = oldChars[oldIdx];
         const startRect = oldRects[oldIdx]; 
         const endRect   = newRects[newIdx]; 
@@ -518,27 +548,29 @@ function shuffleDeck() {
 }
 
 function returnAllLettersWithAnimation() {
-    if (gameState.inputLetters.length === 0) return;
-
-    const itemsToReturn = [...gameState.inputLetters];
-    const inputWrappers = Array.from(ui.inputArea.querySelectorAll('.sphere-wrapper'));
-    const startRects = inputWrappers.map(w => w.getBoundingClientRect());
+    const validItems = gameState.inputLetters.map((item, i) => item ? { ...item, inputIdx: i } : null).filter(Boolean);
+    if (validItems.length === 0) return;
 
     gameState.inputLetters = [];
     renderInput();
     
     // Oculta as letras destino no deck que estão voltando
-    const hiddenIndices = itemsToReturn.map(item => item.deckIndex);
+    const hiddenIndices = validItems.map(item => item.deckIndex);
     renderDeck(hiddenIndices);
 
-    itemsToReturn.forEach((item, i) => {
-        if (!startRects[i]) return;
+    const inputWrappers = Array.from(ui.inputArea.querySelectorAll('.sphere-wrapper'));
+    const allInputRects = inputWrappers.map(w => w.getBoundingClientRect());
+
+    validItems.forEach((item) => {
+        const startRect = allInputRects[item.inputIdx];
+        if (!startRect) return;
+
         const destWrapper = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${item.deckIndex}']`);
         if (destWrapper) {
             const destRect = destWrapper.getBoundingClientRect();
             const destSphere = destWrapper.querySelector('.deck-letter');
             
-            animateFLIPGhost(item.char, startRects[i], destRect, {
+            animateFLIPGhost(item.char, startRect, destRect, {
                 onDone: () => {
                     if (destSphere) {
                         destSphere.style.opacity = '1';
@@ -555,9 +587,10 @@ function returnAllLettersWithAnimation() {
 
 function submitWord() {
     if (gameState.revealed) return;
-    if (gameState.inputLetters.length < 3) return;
+    const validItems = gameState.inputLetters.filter(Boolean);
+    if (validItems.length < 3) return;
 
-    const formedWord = gameState.inputLetters.map(item => item.char).join('');
+    const formedWord = validItems.map(item => item.char).join('');
 
     const wordObj = gameState.validWordsForLevel.find(w => w.unaccentedWord === formedWord);
 
@@ -651,7 +684,7 @@ function addScore(wordLength) {
         points += 50;
     }
     gameState.score += points;
-    ui.scoreDisplay.textContent = gameState.score.toString().padStart(3, '0');
+    ui.scoreDisplay.textContent = gameState.score.toString().padStart(4, '0');
 }
 
 function nextLevel() {
@@ -666,6 +699,7 @@ function nextLevel() {
         missedWords.forEach(w => w.revealed = true);
         renderBoard();
         ui.nextLevelBtn.textContent = "Avançar →";
+        disableFooter(true);
         return;
     }
 
@@ -687,6 +721,12 @@ function showModal(title, text, btnText, callback) {
 
 function closeModal() {
     ui.modal.classList.add('hidden');
+}
+
+function disableFooter(disabled = true) {
+    ui.submitBtn.disabled = disabled;
+    ui.shuffleBtn.disabled = disabled;
+    ui.hintBtn.disabled = disabled;
 }
 
 // Utils

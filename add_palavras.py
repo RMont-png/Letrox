@@ -8,15 +8,15 @@ def remove_accents(input_str):
 def sort_key(word):
     return remove_accents(word).lower()
 
-path = r"c:\Users\pmont\OneDrive\Área de Trabalho\Letrox\palavras_letrox_copy.json"
+path = r"c:\Users\pmont\OneDrive\Área de Trabalho\Letrox\palavras_letrox.json"
 
 words_to_add = [
-    "cem", "rasa", "cetro", "rasas", "cetros", "com", "poça", 
-    "como", "mono", "domo", "comos", "domos", "poças", 
-    "veto", "trevos", "netas", "esta", "topar", "torra", "tua", 
-    "touca", "toucas", "torras", "trapo", "rouca", "Fora", 
-    "socar", "orca", "ocas", "Fosca", "orcas", "foscas", 
-    "rasas", "trapos", "roucas", "vetos", "tuas", "estas", "vetar", "berços"]
+    "tira", "rum", "muita", "vós", "cipó", "cipó", "sacro", 
+    "sacros", "será", "véus", "nabo", "nabos", "broa", "broas", 
+    "boina", "boinas", "roças", "mista", "vãos", "sedas", 
+    "sacas", "dessa", "dessas", "uma", "umas", "rim", 
+    "eles", "melhor", "lemes", "baço", "cacho", "corar"
+]
 
 # Ler o arquivo JSON atual
 with open(path, 'r', encoding='utf-8') as f:

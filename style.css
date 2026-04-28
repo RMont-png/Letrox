@@ -247,9 +247,10 @@ header {
     flex-direction: row;
     justify-content: center;
     align-items: flex-start;
-    gap: 25px;
+    gap: clamp(8px, 3vw, 25px);
     height: auto;
     width: 100%;
+    overflow: hidden;
 }
 
 .board-column {
@@ -521,6 +522,13 @@ footer {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
+}
+
+.controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
+    transform: none !important;
 }
 
 #shuffle-btn,
