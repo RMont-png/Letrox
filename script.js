@@ -238,8 +238,9 @@ function renderBoard() {
         boardHeight = 400; // fallback de segurança
     }
 
+    const containerPadding = 30; // 15px top + 15px bottom de #board-container
     let itemHeight = slotSize + 4; // tamanho + gap da coluna
-    let maxItemsPerColumn = Math.max(1, Math.floor((boardHeight - 10) / itemHeight));
+    let maxItemsPerColumn = Math.max(1, Math.floor((boardHeight - containerPadding) / itemHeight));
     let numCols = Math.ceil(totalWords / maxItemsPerColumn);
 
     // Garante que a largura de todas as colunas caiba na tela
@@ -252,7 +253,7 @@ function renderBoard() {
         
         // Recalcula colunas caso o slot tenha diminuído (pode caber mais itens agora)
         itemHeight = slotSize + 4;
-        maxItemsPerColumn = Math.max(1, Math.floor((boardHeight - 10) / itemHeight));
+        maxItemsPerColumn = Math.max(1, Math.floor((boardHeight - containerPadding) / itemHeight));
         numCols = Math.ceil(totalWords / maxItemsPerColumn);
     }
 
