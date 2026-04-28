@@ -38,7 +38,9 @@ const ui = {
     powersModal: document.getElementById('powers-modal'),
     closePowersBtn: document.getElementById('close-powers-btn'),
     powerFirstLetter: document.getElementById('power-first-letter'),
-    powerRandomLetter: document.getElementById('power-random-letter')
+    powerRandomLetter: document.getElementById('power-random-letter'),
+    rulesModal: document.getElementById('rules-modal'),
+    closeRulesBtn: document.getElementById('close-rules-btn')
 };
 
 // Inicialização
@@ -86,12 +88,7 @@ function startGame() {
 }
 
 function showRules() {
-    showModal(
-        "Como Jogar",
-        "Forme palavras usando as letras fornecidas. O jogo avança quando você encontra a Palavra Mestre (que usa todas as letras da rodada).",
-        "Entendi",
-        closeModal
-    );
+    ui.rulesModal.classList.remove('hidden');
 }
 
 function backToMenu() {
@@ -220,53 +217,67 @@ function canFormWord(word, masterCounts) {
 function renderBoard() {
     ui.wordsBoard.innerHTML = '';
 
-    // Configura o tamanho dinâmico dos slots e quantidade de colunas
     const totalWords = gameState.validWordsForLevel.length;
-    let slotSize;
-
-    if (totalWords <= 8) slotSize = 36;
-    else if (totalWords <= 12) slotSize = 32;
-    else if (totalWords <= 18) slotSize = 28;
-    else if (totalWords <= 24) slotSize = 24;
-    else if (totalWords <= 30) slotSize = 22;
-    else if (totalWords <= 40) slotSize = 18;
-    else if (totalWords <= 55) slotSize = 14;
-    else slotSize = 11;
-
-    let boardHeight = ui.wordsBoard.parentElement.clientHeight;
-    if (!boardHeight || boardHeight < 100) {
-        boardHeight = 400; // fallback de segurança
-    }
-
-    const containerPadding = 30; // 15px top + 15px bottom de #board-container
-    let itemHeight = slotSize + 4; // tamanho + gap da coluna
-    let maxItemsPerColumn = Math.max(1, Math.floor((boardHeight - containerPadding) / itemHeight));
-    let numCols = Math.ceil(totalWords / maxItemsPerColumn);
-
-    // Garante que a largura de todas as colunas caiba na tela
     const maxWordLen = gameState.currentMasterWord.length;
-    const availableWidth = window.innerWidth - 30 - ((numCols - 1) * 15); // 30px padding, 15px gap entre cols
-    const maxSlotWidth = (availableWidth / numCols) / maxWordLen - 2; // -2px gap entre letras
 
-    if (slotSize > maxSlotWidth) {
-        slotSize = Math.max(10, Math.floor(maxSlotWidth));
-        
-        // Recalcula colunas caso o slot tenha diminuído (pode caber mais itens agora)
-        itemHeight = slotSize + 4;
-        maxItemsPerColumn = Math.max(1, Math.floor((boardHeight - containerPadding) / itemHeight));
-        numCols = Math.ceil(totalWords / maxItemsPerColumn);
+    const container = ui.wordsBoard.parentElement;
+    const containerPaddingV = 40; // 15px top + 15px bottom + 10px safety margin
+    const containerPaddingH = 30; // 15px left + 15px right
+    const availableH = Math.max(100, container.clientHeight - containerPaddingV);
+    const availableW = Math.max(100, container.clientWidth  - containerPaddingH);
+
+    const itemGapV   = 4;  // gap entre linhas dentro da coluna
+    const itemGapH   = 2;  // gap entre letras dentro de uma linha
+    const colGap     = 12; // gap entre colunas
+
+    let bestSlotSize    = 0;
+    let bestNumCols     = 1;
+
+    // Itera pelo número de colunas e encontra o que maximiza o slotSize
+    for (let cols = 1; cols <= totalWords; cols++) {
+        // Largura por coluna: se já ficou impossível não adianta tentar mais colunas
+        const maxByW = Math.floor(
+            (availableW + itemGapH - (cols - 1) * colGap) / cols / maxWordLen - itemGapH
+        );
+        if (maxByW < 8) break; // mais colunas só piora a largura
+
+        const wordsPerCol = Math.ceil(totalWords / cols);
+        const maxByH = Math.floor((availableH + itemGapV) / wordsPerCol - itemGapV);
+
+        const slotSize = Math.min(maxByH, maxByW);
+
+        if (slotSize > bestSlotSize) {
+            bestSlotSize = slotSize;
+            bestNumCols  = cols;
+        }
     }
 
-    document.documentElement.style.setProperty('--slot-size', `${slotSize}px`);
-    document.documentElement.style.setProperty('--slot-font', `${slotSize * 0.65}px`);
+    // Garante mínimo de 8px e máximo estético de 36px
+    bestSlotSize = Math.min(36, Math.max(8, bestSlotSize));
 
-    const wordsPerCol = Math.ceil(totalWords / numCols);
+    document.documentElement.style.setProperty('--slot-size', `${bestSlotSize}px`);
+    document.documentElement.style.setProperty('--slot-font', `${Math.round(bestSlotSize * 0.65)}px`);
+
+    // Distribui palavras entre colunas de forma balanceada (diferença máxima de 1)
+    const basePerCol  = Math.floor(totalWords / bestNumCols);
+    const extra       = totalWords % bestNumCols; // primeiras `extra` colunas levam +1
+    // Monta array com o limite de cada coluna
+    const colLimits = [];
+    let acc = 0;
+    for (let c = 0; c < bestNumCols; c++) {
+        acc += basePerCol + (c < extra ? 1 : 0);
+        colLimits.push(acc);
+    }
+
     let currentColDiv;
+    let colIdx = 0;
+
 
     // gameState.validWordsForLevel já está ordenado por tamanho
     gameState.validWordsForLevel.forEach((item, index) => {
-        // Cria nova coluna a cada limite (wordsPerCol) ou no primeiro item
-        if (index % wordsPerCol === 0) {
+        // Cria nova coluna quando ultrapassa o limite da coluna atual
+        if (!currentColDiv || index >= colLimits[colIdx]) {
+            if (currentColDiv) colIdx++;
             currentColDiv = document.createElement('div');
             currentColDiv.className = 'board-column';
             ui.wordsBoard.appendChild(currentColDiv);
@@ -296,6 +307,7 @@ function renderBoard() {
         currentColDiv.appendChild(rowDiv);
     });
 }
+
 
 function renderInput(hiddenIndex = -1) {
     ui.inputArea.innerHTML = '';
@@ -649,7 +661,7 @@ function submitWord() {
                     fireConfetti();
 
                     setTimeout(() => {
-                        showModal("✨ Palavra Mestre!", "Você encontrou a palavra que usa todas as letras. Avance ou continue para mais pontos!", "Continuar", closeModal);
+                        showModal("✨ Palavra Mestre!", "Você encontrou a palavra mestra! já pode passar para a próxima fase.", "Continuar", closeModal);
                     }, 800);
                 }, 400);
             }
@@ -783,13 +795,14 @@ function fireConfetti() {
     }
 }
 
-// Event Listeners
 ui.shuffleBtn.addEventListener('click', shuffleDeck);
 ui.submitBtn.addEventListener('click', submitWord);
 ui.nextLevelBtn.addEventListener('click', nextLevel);
 ui.playBtn.addEventListener('click', startGame);
 ui.rulesBtn.addEventListener('click', showRules);
 ui.backBtn.addEventListener('click', backToMenu);
+ui.closeRulesBtn.addEventListener('click', () => ui.rulesModal.classList.add('hidden'));
+
 
 // Poderes
 ui.hintBtn.addEventListener('click', () => {

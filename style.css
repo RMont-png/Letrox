@@ -785,3 +785,73 @@ footer {
     color: var(--primary);
     margin-bottom: 3px;
 }
+
+/* Rules Modal */
+#rules-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.rules-content {
+    max-width: 340px;
+    max-height: 85dvh;
+    overflow-y: auto;
+    text-align: left;
+}
+
+.rules-content h2 {
+    text-align: center;
+    color: var(--primary);
+    margin-bottom: 16px;
+    font-size: 1.5rem;
+}
+
+.rules-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rules-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+
+.rules-section h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+}
+
+.rules-section p,
+.rules-section li {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.rules-section ul {
+    padding-left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.rules-no {
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+.rules-no h3 {
+    color: var(--error);
+}

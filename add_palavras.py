@@ -11,11 +11,14 @@ def sort_key(word):
 path = r"c:\Users\pmont\OneDrive\Área de Trabalho\Letrox\palavras_letrox.json"
 
 words_to_add = [
-    "tira", "rum", "muita", "vós", "cipó", "cipó", "sacro", 
-    "sacros", "será", "véus", "nabo", "nabos", "broa", "broas", 
-    "boina", "boinas", "roças", "mista", "vãos", "sedas", 
-    "sacas", "dessa", "dessas", "uma", "umas", "rim", 
-    "eles", "melhor", "lemes", "baço", "cacho", "corar"
+    "sopas", "pose", "siso", "baús", "aras", "sarda", "sardas", 
+    "brasas", "auras", "budas", "rasas", "larva", "larvas", 
+    "viral", "vaiar", "vilã", "avril", "poses", "toca", "tocas", 
+    "tosca", "toscas", "miado", "miados", "dado", "dados", 
+    "tear", "talas", "elas", "alerta", "aleta", "aletas", 
+    "trela", "trelas", "tal", "tais", "buço", "buços", "bata", 
+    "batas", "cento", "centos", "oco", "tarar", "ocos", 
+    "tanga", "tangas", "angra", "angras", "teares"
 ]
 
 # Ler o arquivo JSON atual
