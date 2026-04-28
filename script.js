@@ -224,14 +224,14 @@ function renderBoard() {
     const containerPaddingV = 40; // 15px top + 15px bottom + 10px safety margin
     const containerPaddingH = 30; // 15px left + 15px right
     const availableH = Math.max(100, container.clientHeight - containerPaddingV);
-    const availableW = Math.max(100, container.clientWidth  - containerPaddingH);
+    const availableW = Math.max(100, container.clientWidth - containerPaddingH);
 
-    const itemGapV   = 4;  // gap entre linhas dentro da coluna
-    const itemGapH   = 2;  // gap entre letras dentro de uma linha
-    const colGap     = 12; // gap entre colunas
+    const itemGapV = 4;  // gap entre linhas dentro da coluna
+    const itemGapH = 2;  // gap entre letras dentro de uma linha
+    const colGap = 12; // gap entre colunas
 
-    let bestSlotSize    = 0;
-    let bestNumCols     = 1;
+    let bestSlotSize = 0;
+    let bestNumCols = 1;
 
     // Itera pelo número de colunas e encontra o que maximiza o slotSize
     for (let cols = 1; cols <= totalWords; cols++) {
@@ -248,7 +248,7 @@ function renderBoard() {
 
         if (slotSize > bestSlotSize) {
             bestSlotSize = slotSize;
-            bestNumCols  = cols;
+            bestNumCols = cols;
         }
     }
 
@@ -259,8 +259,8 @@ function renderBoard() {
     document.documentElement.style.setProperty('--slot-font', `${Math.round(bestSlotSize * 0.65)}px`);
 
     // Distribui palavras entre colunas de forma balanceada (diferença máxima de 1)
-    const basePerCol  = Math.floor(totalWords / bestNumCols);
-    const extra       = totalWords % bestNumCols; // primeiras `extra` colunas levam +1
+    const basePerCol = Math.floor(totalWords / bestNumCols);
+    const extra = totalWords % bestNumCols; // primeiras `extra` colunas levam +1
     // Monta array com o limite de cada coluna
     const colLimits = [];
     let acc = 0;
@@ -324,7 +324,7 @@ function renderInput(hiddenIndex = -1) {
             letterDiv.className = 'input-letter';
             letterDiv.textContent = letterObj.char;
             letterDiv.dataset.deckIndex = letterObj.deckIndex;
-            
+
             // Criado já invisível para evitar flash durante animação
             if (i === hiddenIndex) {
                 letterDiv.style.opacity = '0';
@@ -405,9 +405,9 @@ function animateFLIPGhost(char, startRect, destRect, options = {}) {
     `;
     document.body.appendChild(ghost);
 
-    const dx     = destRect.left - startRect.left;
-    const dy     = destRect.top  - startRect.top;
-    const scaleX = destRect.width  / startRect.width;
+    const dx = destRect.left - startRect.left;
+    const dy = destRect.top - startRect.top;
+    const scaleX = destRect.width / startRect.width;
     const scaleY = destRect.height / startRect.height;
 
     const keyframes = arcY !== 0
@@ -415,11 +415,11 @@ function animateFLIPGhost(char, startRect, destRect, options = {}) {
             { transform: `translate(0,0) scale(1)`, opacity: 1, offset: 0 },
             { transform: `translate(${dx * 0.5}px, ${dy * 0.5 + arcY}px) scale(${(scaleX + 1) / 2}, ${(scaleY + 1) / 2})`, opacity: 1, offset: 0.5 },
             { transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 1 }
-          ]
+        ]
         : [
             { transform: `translate(0,0) scale(1)`, opacity: 1 },
             { transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`, opacity: 1 }
-          ];
+        ];
 
     ghost.animate(keyframes, {
         duration,
@@ -446,7 +446,7 @@ function moveFromDeckToInput(deckIndex, char) {
         gameState.inputLetters[emptyIndex] = { char, deckIndex };
     }
     const inputIdx = emptyIndex;
-    
+
     // Renderiza input com a nova letra já invisível
     renderInput(inputIdx);
     renderDeck();
@@ -456,7 +456,7 @@ function moveFromDeckToInput(deckIndex, char) {
         if (filledSlot) {
             const destRect = filledSlot.getBoundingClientRect();
             const destSphere = filledSlot.querySelector('.input-letter');
-            
+
             animateFLIPGhost(char, startRect, destRect, {
                 onDone: () => {
                     if (destSphere) {
@@ -504,9 +504,9 @@ function moveFromInputToDeck(inputIndex) {
 
 function shuffleDeck() {
     // 1. Captura posição EXATA de cada wrapper antes de mexer em nada
-    const wrappers  = Array.from(ui.deckArea.querySelectorAll('.sphere-wrapper'));
-    const oldRects  = wrappers.map(w => w.getBoundingClientRect());
-    const oldChars  = [...gameState.deckLetters];
+    const wrappers = Array.from(ui.deckArea.querySelectorAll('.sphere-wrapper'));
+    const oldRects = wrappers.map(w => w.getBoundingClientRect());
+    const oldChars = [...gameState.deckLetters];
 
     // 2. Cria uma permutação de índices e embaralha
     const perm = oldChars.map((_, i) => i);
@@ -523,7 +523,7 @@ function shuffleDeck() {
         }
     });
 
-    renderDeck(-1, true); 
+    renderDeck(-1, true);
 
     // 5. Captura as referências das esferas e as NOVAS posições dos wrappers
     const GHOST_DURATION = 400;
@@ -536,11 +536,11 @@ function shuffleDeck() {
         const isUsed = gameState.inputLetters.some(item => item && item.deckIndex === newIdx);
         if (isUsed) return; // Não anima bolinhas que já estão no input
 
-        const char      = oldChars[oldIdx];
-        const startRect = oldRects[oldIdx]; 
-        const endRect   = newRects[newIdx]; 
-        const delay     = newIdx * 30; 
-        const arcY      = (Math.random() - 0.5) * 50;
+        const char = oldChars[oldIdx];
+        const startRect = oldRects[oldIdx];
+        const endRect = newRects[newIdx];
+        const delay = newIdx * 30;
+        const arcY = (Math.random() - 0.5) * 50;
 
         animateFLIPGhost(char, startRect, endRect, {
             duration: GHOST_DURATION,
@@ -566,7 +566,7 @@ function returnAllLettersWithAnimation() {
 
     gameState.inputLetters = [];
     renderInput();
-    
+
     // Oculta as letras destino no deck que estão voltando
     const hiddenIndices = validItems.map(item => item.deckIndex);
     renderDeck(hiddenIndices);
@@ -582,7 +582,7 @@ function returnAllLettersWithAnimation() {
         if (destWrapper) {
             const destRect = destWrapper.getBoundingClientRect();
             const destSphere = destWrapper.querySelector('.deck-letter');
-            
+
             animateFLIPGhost(item.char, startRect, destRect, {
                 onDone: () => {
                     if (destSphere) {
@@ -661,14 +661,14 @@ function submitWord() {
                     fireConfetti();
 
                     setTimeout(() => {
-                        showModal("✨ Palavra Mestre!", "Você encontrou a palavra mestra! já pode passar para a próxima fase.", "Continuar", closeModal);
+                        showModal("✨ Palavra Mestra encontrada!", "Agora você já pode passar para a próxima fase.", "Continuar", closeModal);
                     }, 800);
                 }, 400);
             }
 
             if (gameState.validWordsForLevel.every(w => w.found)) {
                 setTimeout(() => {
-                    showModal("Nível Concluído!", "Você encontrou TODAS as palavras ocultas!", "Próximo Nível", nextLevel);
+                    showModal("Nível Concluído!", "Parabéns! Você encontrou TODAS as palavras ocultas!", "Próximo Nível", nextLevel);
                 }, 600);
             }
         }
@@ -676,7 +676,7 @@ function submitWord() {
         // Erro: Palavra não existe
         showFeedback(ui.inputArea, 'error-bg');
         showFeedback(ui.inputArea, 'shake');
-        
+
         setTimeout(() => {
             returnAllLettersWithAnimation();
         }, 500);
@@ -767,14 +767,14 @@ function fireConfetti() {
         document.body.appendChild(el);
 
         // Espalha por todo o arco superior
-        const angle  = Math.random() * Math.PI + Math.PI; 
-        const speed  = 300 + Math.random() * 600;
-        const vx     = Math.cos(angle) * speed * (window.innerWidth / 400); // Espalha mais horizontalmente
-        const vy     = Math.sin(angle) * speed - 200; // Impulso para cima
+        const angle = Math.random() * Math.PI + Math.PI;
+        const speed = 300 + Math.random() * 600;
+        const vx = Math.cos(angle) * speed * (window.innerWidth / 400); // Espalha mais horizontalmente
+        const vy = Math.sin(angle) * speed - 200; // Impulso para cima
         const rotate = Math.random() * 720 - 360;
-        const size   = 10 + Math.random() * 15; // Confetes maiores
+        const size = 10 + Math.random() * 15; // Confetes maiores
 
-        el.style.width  = size + 'px';
+        el.style.width = size + 'px';
         el.style.height = size + 'px';
 
         el.animate([
@@ -788,9 +788,9 @@ function fireConfetti() {
             }
         ], {
             duration: 1500 + Math.random() * 1000,
-            delay:    Math.random() * 300,
-            easing:   'cubic-bezier(0.23, 1, 0.32, 1)',
-            fill:     'forwards'
+            delay: Math.random() * 300,
+            easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
+            fill: 'forwards'
         }).onfinish = () => el.remove();
     }
 }
@@ -817,14 +817,14 @@ ui.powerFirstLetter.addEventListener('click', () => {
     if (gameState.power1Used) return;
     gameState.power1Used = true;
     ui.powersModal.classList.add('hidden');
-    
+
     let delayCounter = 0;
     gameState.validWordsForLevel.forEach(wordObj => {
         if (!wordObj.found) {
             if (!wordObj.revealedIndexes) wordObj.revealedIndexes = [];
             if (!wordObj.revealedIndexes.includes(0)) {
                 wordObj.revealedIndexes.push(0);
-                
+
                 const row = ui.wordsBoard.querySelector(`.word-row[data-word="${wordObj.word}"]`);
                 if (row) {
                     const slot = row.querySelectorAll('.letter-slot')[0];
@@ -846,7 +846,7 @@ ui.powerRandomLetter.addEventListener('click', () => {
     if (gameState.power2Used) return;
     gameState.power2Used = true;
     ui.powersModal.classList.add('hidden');
-    
+
     let delayCounter = 0;
     gameState.validWordsForLevel.forEach(wordObj => {
         if (!wordObj.found) {
@@ -858,7 +858,7 @@ ui.powerRandomLetter.addEventListener('click', () => {
             if (availableIndexes.length > 0) {
                 const randomIdx = availableIndexes[Math.floor(Math.random() * availableIndexes.length)];
                 wordObj.revealedIndexes.push(randomIdx);
-                
+
                 const row = ui.wordsBoard.querySelector(`.word-row[data-word="${wordObj.word}"]`);
                 if (row) {
                     const slot = row.querySelectorAll('.letter-slot')[randomIdx];
