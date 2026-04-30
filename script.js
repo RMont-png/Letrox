@@ -31,7 +31,32 @@ const SoundManager = {
             'sons/balls 3.mp3', 'sons/balls 10.mp3', 'sons/balls 12.mp3',
             'sons/balls 21.mp3', 'sons/balls 22.mp3'
         ],
-        tap: ['sons/tap 1.mp3', 'sons/tap 2.mp3', 'sons/tap 3.mp3']
+        tap: ['sons/tap 1.mp3', 'sons/tap 2.mp3', 'sons/tap 3.mp3', 'sons/tap 4.mp3']
+    },
+    // Configuração central de volumes para facilitar o ajuste manual
+    volumes: {
+        // Efeitos únicos
+        'acerto': 0.5,
+        'erro': 0.5,
+        'repetida': 0.4,
+        'palavra mestra': 0.5,
+        'completo': 0.5,
+        'poder 01': 0.5,
+        'poder 02': 0.5,
+        'click': 0.5,
+
+        // Efeitos de grupo (bolinhas)
+        'balls 3.mp3': 0.4,
+        'balls 10.mp3': 0.4,
+        'balls 12.mp3': 0.4,
+        'balls 21.mp3': 0.4,
+        'balls 22.mp3': 0.4,
+
+        // Efeitos de grupo (taps)
+        'tap 1.mp3': 0.1,
+        'tap 2.mp3': 0.1,
+        'tap 3.mp3': 0.3,
+        'tap 4.mp3': 0.3
     },
     _cache: {},
     preload() {
@@ -52,7 +77,10 @@ const SoundManager = {
         const a = this._cache[name];
         if (!a) return;
         const clone = a.cloneNode();
-        clone.volume = 0.5; // Todos pela metade
+
+        // Aplica o volume configurado ou o padrão (0.5)
+        clone.volume = this.volumes[name] !== undefined ? this.volumes[name] : 0.5;
+
         clone.play().catch(() => { });
     },
     playRandom(group) {
@@ -61,15 +89,11 @@ const SoundManager = {
         const a = pool[Math.floor(Math.random() * pool.length)];
         const clone = a.cloneNode();
 
-        // Padrão é metade do volume
-        clone.volume = 0.5;
+        // Extrai o nome do arquivo da URL para buscar o volume específico (ex: "tap 1.mp3")
+        const filename = decodeURIComponent(a.src).split('/').pop();
 
-        // Ajustes de volume específicos
-        if (a.src.includes('tap%201.mp3') || a.src.includes('tap 1.mp3')) {
-            clone.volume = 0.3;
-        } else if (a.src.includes('tap%202.mp3') || a.src.includes('tap 2.mp3')) {
-            clone.volume = 0.2;
-        }
+        // Aplica o volume configurado ou o padrão (0.5)
+        clone.volume = this.volumes[filename] !== undefined ? this.volumes[filename] : 0.5;
 
         clone.play().catch(() => { });
     }
