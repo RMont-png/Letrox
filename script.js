@@ -100,6 +100,22 @@ const SoundManager = {
 };
 SoundManager.preload();
 
+// ── ImageManager ─────────────────────────────────────────────────────────
+const ImageManager = {
+    images: [
+        'emoji_kkk.png'
+    ],
+    _cache: {},
+    preload() {
+        this.images.forEach(src => {
+            const img = new Image();
+            img.src = src;
+            this._cache[src] = img;
+        });
+    }
+};
+ImageManager.preload();
+
 // Elementos da UI
 const ui = {
     menuScreen: document.getElementById('menu-screen'),
@@ -341,7 +357,7 @@ function renderBoard() {
     }
 
     // Garante mínimo de 8px e máximo estético de 36px
-    bestSlotSize = Math.min(36, Math.max(8, bestSlotSize));
+    bestSlotSize = Math.min(36, Math.max(12, bestSlotSize));
 
     document.documentElement.style.setProperty('--slot-size', `${bestSlotSize}px`);
     document.documentElement.style.setProperty('--slot-font', `${Math.round(bestSlotSize * 0.65)}px`);
@@ -498,15 +514,20 @@ function animateFLIPGhost(char, startRect, destRect, options = {}) {
     const scaleX = destRect.width / startRect.width;
     const scaleY = destRect.height / startRect.height;
 
+    const scaleMultiplier = 1.3; // Cresce 30% no meio para dar efeito de salto
+    const midScaleX = ((scaleX + 1) / 2) * scaleMultiplier;
+    const midScaleY = ((scaleY + 1) / 2) * scaleMultiplier;
+
     const keyframes = arcY !== 0
         ? [
             { transform: `translate(0,0) scale(1)`, opacity: 1, offset: 0 },
-            { transform: `translate(${dx * 0.5}px, ${dy * 0.5 + arcY}px) scale(${(scaleX + 1) / 2}, ${(scaleY + 1) / 2})`, opacity: 1, offset: 0.5 },
+            { transform: `translate(${dx * 0.5}px, ${dy * 0.5 + arcY}px) scale(${midScaleX}, ${midScaleY})`, opacity: 1, offset: 0.5 },
             { transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 1 }
         ]
         : [
-            { transform: `translate(0,0) scale(1)`, opacity: 1 },
-            { transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`, opacity: 1 }
+            { transform: `translate(0,0) scale(1)`, opacity: 1, offset: 0 },
+            { transform: `translate(${dx * 0.5}px, ${dy * 0.5}px) scale(${midScaleX}, ${midScaleY})`, opacity: 1, offset: 0.5 },
+            { transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 1 }
         ];
 
     ghost.animate(keyframes, {
