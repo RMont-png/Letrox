@@ -941,18 +941,18 @@ function handleMotion(event) {
     if (!acc) return;
 
     const { x, y, z } = acc;
+    if (x === null || y === null || z === null) return;
 
     if (lastX !== null) {
         const deltaX = Math.abs(x - lastX);
         const deltaY = Math.abs(y - lastY);
         const deltaZ = Math.abs(z - lastZ);
 
-        // Limite para detectar um chacoalhão (15 é um valor comum)
-        const threshold = 15;
+        // Limite abaixado para ficar super sensível e testarmos se funciona
+        const threshold = 8;
 
         if (deltaX > threshold || deltaY > threshold || deltaZ > threshold) {
             const now = Date.now();
-            // Cooldown de 1 segundo para não chamar múltiplas vezes
             if (now - lastShakeTime > 1000) {
                 lastShakeTime = now;
                 shuffleDeck();
