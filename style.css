@@ -103,24 +103,32 @@ body {
     font-size: 1.2rem;
     font-weight: bold;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    position: relative;
+    top: 0;
 }
 
 .primary-btn {
     background: linear-gradient(135deg, var(--primary), var(--secondary));
     color: white;
-    box-shadow: 0 4px 15px var(--primary-glow);
+    box-shadow: 0 6px 0 #140024;
 }
 
 .secondary-btn {
     background: rgba(255, 255, 255, 0.1);
     color: white;
     border: 1px solid var(--glass-border);
+    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.45), 0 6px 12px rgba(0, 0, 0, 0.3);
 }
 
-.primary-btn:active,
+.primary-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 #140024;
+}
+
 .secondary-btn:active {
-    transform: scale(0.95);
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45), 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Game Screen */
@@ -166,12 +174,14 @@ header {
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: transform 0.2s;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
     flex-shrink: 0;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5), 0 5px 10px rgba(0, 0, 0, 0.25);
 }
 
 .nav-btn:active {
-    transform: scale(0.9);
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 .stats {
@@ -190,7 +200,8 @@ header {
     justify-content: center;
 }
 
-.level, .score {
+.level,
+.score {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -210,8 +221,8 @@ header {
     color: white;
     font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 4px 15px var(--primary-glow);
-    transition: all 0.3s;
+    box-shadow: 0 5px 0 #140024;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
     font-size: 0.9rem;
     white-space: nowrap;
 }
@@ -224,8 +235,9 @@ header {
     transform: none;
 }
 
-#next-level-btn:active {
-    transform: scale(0.95);
+#next-level-btn:not(:disabled):active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #140024;
 }
 
 .hidden {
@@ -463,7 +475,8 @@ footer {
     border-radius: 50%;
 }
 
-#input-area, #deck-area {
+#input-area,
+#deck-area {
     display: flex;
     flex-wrap: nowrap;
     justify-content: center;
@@ -521,7 +534,7 @@ footer {
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
 .controls button:disabled {
@@ -529,11 +542,12 @@ footer {
     cursor: not-allowed;
     filter: grayscale(1);
     transform: none !important;
+    box-shadow: none !important;
 }
 
 #shuffle-btn,
 #hint-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
     color: var(--text-main);
     border: 1px solid var(--glass-border);
     flex: 0 0 70px;
@@ -542,17 +556,25 @@ footer {
     display: flex;
     justify-content: center;
     align-items: center;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.5), 0 6px 12px rgba(0, 0, 0, 0.3);
 }
 
 #submit-btn {
     flex: 1;
-    background: var(--primary);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
     color: white;
-    box-shadow: 0 4px 15px var(--primary-glow);
+    box-shadow: 0 5px 0 #140024;
 }
 
-.controls button:active {
-    transform: translateY(2px);
+#shuffle-btn:not(:disabled):active,
+#hint-btn:not(:disabled):active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+#submit-btn:not(:disabled):active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #140024;
 }
 
 
@@ -621,7 +643,8 @@ footer {
 }
 
 /* Modal e Modal de Poderes */
-#modal, #powers-modal {
+#modal,
+#powers-modal {
     position: fixed;
     top: 0;
     left: 0;
@@ -671,12 +694,13 @@ footer {
     font-weight: bold;
     cursor: pointer;
     width: 100%;
-    box-shadow: 0 4px 15px var(--primary-glow);
-    transition: transform 0.2s;
+    box-shadow: 0 5px 0 #140024;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
 #modal-btn:active {
-    transform: scale(0.95);
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #140024;
 }
 
 /* Toast Notification */
@@ -723,6 +747,7 @@ footer {
         transform: scale(0.5) translateY(20px);
         opacity: 0;
     }
+
     100% {
         transform: scale(1) translateY(0);
         opacity: 1;
@@ -730,8 +755,15 @@ footer {
 }
 
 @keyframes toastOut {
-    0% { transform: scale(1); opacity: 1; }
-    100% { transform: scale(0.8); opacity: 0; }
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
 }
 
 /* Powers Modal */
@@ -744,30 +776,32 @@ footer {
 .power-btn {
     display: flex;
     align-items: center;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.07);
     border: 1px solid var(--glass-border);
     border-radius: 12px;
     padding: 12px;
     color: var(--text-main);
     text-align: left;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.45), 0 6px 12px rgba(0, 0, 0, 0.25);
 }
 
 .power-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
     border-color: var(--primary);
-    transform: translateY(-2px);
 }
 
 .power-btn:active:not(:disabled) {
-    transform: translateY(0);
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45), 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
 .power-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     filter: grayscale(1);
+    box-shadow: none;
 }
 
 .power-icon {
@@ -789,7 +823,10 @@ footer {
 /* Rules Modal */
 #rules-modal {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);

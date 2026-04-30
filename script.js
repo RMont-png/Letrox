@@ -10,8 +10,71 @@ const gameState = {
     masterWordFound: false,
     revealed: false,
     power1Used: false,
-    power2Used: false
+    power2Used: false,
+    masterSoundPlayed: false
 };
+
+// ── SoundManager ─────────────────────────────────────────────────────────
+const SoundManager = {
+    singles: {
+        'acerto': 'sons/acerto.mp3',
+        'erro': 'sons/erro.mp3',
+        'repetida': 'sons/repetida.mp3',
+        'palavra mestra': 'sons/palavra mestra.mp3',
+        'completo': 'sons/completo.mp3',
+        'poder 01': 'sons/poder 01.mp3',
+        'poder 02': 'sons/poder 02.mp3',
+        'click': 'sons/click.mp3'
+    },
+    groups: {
+        balls: [
+            'sons/balls 3.mp3', 'sons/balls 10.mp3', 'sons/balls 12.mp3',
+            'sons/balls 21.mp3', 'sons/balls 22.mp3'
+        ],
+        tap: ['sons/tap 1.mp3', 'sons/tap 2.mp3', 'sons/tap 3.mp3']
+    },
+    _cache: {},
+    preload() {
+        for (const [name, src] of Object.entries(this.singles)) {
+            const a = new Audio(src);
+            a.load();
+            this._cache[name] = a;
+        }
+        for (const [group, files] of Object.entries(this.groups)) {
+            this._cache[group] = files.map(src => {
+                const a = new Audio(src);
+                a.load();
+                return a;
+            });
+        }
+    },
+    play(name) {
+        const a = this._cache[name];
+        if (!a) return;
+        const clone = a.cloneNode();
+        clone.volume = 0.5; // Todos pela metade
+        clone.play().catch(() => { });
+    },
+    playRandom(group) {
+        const pool = this._cache[group];
+        if (!pool || !pool.length) return;
+        const a = pool[Math.floor(Math.random() * pool.length)];
+        const clone = a.cloneNode();
+
+        // Padrão é metade do volume
+        clone.volume = 0.5;
+
+        // Ajustes de volume específicos
+        if (a.src.includes('tap%201.mp3') || a.src.includes('tap 1.mp3')) {
+            clone.volume = 0.3;
+        } else if (a.src.includes('tap%202.mp3') || a.src.includes('tap 2.mp3')) {
+            clone.volume = 0.2;
+        }
+
+        clone.play().catch(() => { });
+    }
+};
+SoundManager.preload();
 
 // Elementos da UI
 const ui = {
@@ -134,6 +197,7 @@ function loadLevel() {
     gameState.revealed = false;
     gameState.power1Used = false;
     gameState.power2Used = false;
+    gameState.masterSoundPlayed = false;
 
     // Encontra todos os anagramas possíveis
     gameState.validWordsForLevel = findValidAnagrams(gameState.currentMasterWord);
@@ -387,7 +451,7 @@ function renderDeck(hiddenIndices = [], hideAll = false) {
  * @param {Object} options - { duration, arcY, onDone }
  */
 function animateFLIPGhost(char, startRect, destRect, options = {}) {
-    const { duration = 260, arcY = 0, delay = 0, onDone } = options;
+    const { duration = 300, arcY = 0, delay = 0, onDone } = options;
 
     const ghost = document.createElement('div');
     ghost.className = 'deck-letter';
@@ -434,6 +498,7 @@ function animateFLIPGhost(char, startRect, destRect, options = {}) {
 
 // Interações
 function moveFromDeckToInput(deckIndex, char) {
+    SoundManager.playRandom('balls');
     const deckWrapper = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${deckIndex}']`);
     const startRect = deckWrapper ? deckWrapper.getBoundingClientRect() : null;
 
@@ -459,6 +524,7 @@ function moveFromDeckToInput(deckIndex, char) {
 
             animateFLIPGhost(char, startRect, destRect, {
                 onDone: () => {
+                    SoundManager.playRandom('tap');
                     if (destSphere) {
                         destSphere.style.opacity = '1';
                         requestAnimationFrame(() => {
@@ -473,6 +539,7 @@ function moveFromDeckToInput(deckIndex, char) {
 }
 
 function moveFromInputToDeck(inputIndex) {
+    SoundManager.playRandom('balls');
     const inputWrapper = ui.inputArea.querySelector(`.sphere-wrapper[data-input-slot='${inputIndex}']`);
     const startRect = inputWrapper ? inputWrapper.getBoundingClientRect() : null;
     const item = gameState.inputLetters[inputIndex];
@@ -489,6 +556,7 @@ function moveFromInputToDeck(inputIndex) {
             const destSphere = destWrapper.querySelector('.deck-letter');
             animateFLIPGhost(item.char, startRect, destRect, {
                 onDone: () => {
+                    SoundManager.playRandom('tap');
                     if (destSphere) {
                         destSphere.style.opacity = '1';
                         requestAnimationFrame(() => {
@@ -526,7 +594,7 @@ function shuffleDeck() {
     renderDeck(-1, true);
 
     // 5. Captura as referências das esferas e as NOVAS posições dos wrappers
-    const GHOST_DURATION = 400;
+    const GHOST_DURATION = 600;
     const newSpheres = Array.from(ui.deckArea.querySelectorAll('.deck-letter'));
     const newWrappers = Array.from(ui.deckArea.querySelectorAll('.sphere-wrapper'));
     const newRects = newWrappers.map(w => w.getBoundingClientRect());
@@ -540,13 +608,17 @@ function shuffleDeck() {
         const startRect = oldRects[oldIdx];
         const endRect = newRects[newIdx];
         const delay = newIdx * 30;
-        const arcY = (Math.random() - 0.5) * 50;
+        const arcY = (Math.random() - 0.5) * 120;
+
+        // Som de "clique" sincronizado com o início de cada ghost
+        setTimeout(() => SoundManager.playRandom('balls'), delay);
 
         animateFLIPGhost(char, startRect, endRect, {
             duration: GHOST_DURATION,
             delay: delay,
             arcY,
             onDone: () => {
+                SoundManager.playRandom('tap');
                 const s = newSpheres[newIdx];
                 if (s) {
                     s.style.opacity = '1';
@@ -609,6 +681,7 @@ function submitWord() {
 
     if (wordObj) {
         if (wordObj.found) {
+            SoundManager.play('repetida');
             showFeedback(ui.inputArea, 'shake');
             showToast('Você já encontrou<br>essa palavra kkk', 'emoji_kkk.png');
             // Retorna ao deck após o feedback com animação
@@ -617,6 +690,14 @@ function submitWord() {
             }, 400);
         } else {
             wordObj.found = true;
+            let playedMasterSound = false;
+            if (wordObj.isMaster && !gameState.masterSoundPlayed) {
+                gameState.masterSoundPlayed = true;
+                playedMasterSound = true;
+                SoundManager.play('palavra mestra');
+            } else {
+                SoundManager.play('acerto');
+            }
             addScore(wordObj.length);
             showFeedback(ui.inputArea, 'success-bg');
 
@@ -661,19 +742,27 @@ function submitWord() {
                     fireConfetti();
 
                     setTimeout(() => {
-                        showModal("✨ Palavra Mestra encontrada!", "Agora você já pode passar para a próxima fase.", "Continuar", closeModal);
-                    }, 800);
+                        showModal("Palavra Mestra encontrada!", "Agora você já pode passar para a próxima fase.", "Continuar", closeModal);
+                    }, 200); // Aparece quase junto com o início da explosão
                 }, 400);
             }
 
             if (gameState.validWordsForLevel.every(w => w.found)) {
                 setTimeout(() => {
-                    showModal("Nível Concluído!", "Parabéns! Você encontrou TODAS as palavras ocultas!", "Próximo Nível", nextLevel);
-                }, 600);
+                    fireConfetti();
+                    if (!playedMasterSound) {
+                        SoundManager.play('completo');
+                    }
+
+                    setTimeout(() => {
+                        showModal("Nível Concluído!", "Parabéns! Você encontrou TODAS as palavras ocultas!", "Próximo Nível", nextLevel);
+                    }, 200);
+                }, 400);
             }
         }
     } else {
         // Erro: Palavra não existe
+        SoundManager.play('erro');
         showFeedback(ui.inputArea, 'error-bg');
         showFeedback(ui.inputArea, 'shake');
 
@@ -756,8 +845,6 @@ function shuffleArray(array) {
 function fireConfetti() {
     const count = 150;
     const colors = ['#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#3b82f6'];
-    const cx = window.innerWidth / 2;
-    const cy = window.innerHeight;
 
     for (let i = 0; i < count; i++) {
         const el = document.createElement('div');
@@ -766,30 +853,32 @@ function fireConfetti() {
         el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
         document.body.appendChild(el);
 
-        // Espalha por todo o arco superior
-        const angle = Math.random() * Math.PI + Math.PI;
-        const speed = 300 + Math.random() * 600;
-        const vx = Math.cos(angle) * speed * (window.innerWidth / 400); // Espalha mais horizontalmente
-        const vy = Math.sin(angle) * speed - 200; // Impulso para cima
+        // Explosão 360 graus a partir do centro (CSS já posiciona no top 50% left 50%)
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 200 + Math.random() * 600;
+
+        // Posição final baseada no ângulo e velocidade
+        const vx = Math.cos(angle) * speed * (window.innerWidth / 400); // Espalha mais se tela larga
+        const vy = Math.sin(angle) * speed; // Círculo completo
         const rotate = Math.random() * 720 - 360;
-        const size = 10 + Math.random() * 15; // Confetes maiores
+        const size = 8 + Math.random() * 12;
 
         el.style.width = size + 'px';
         el.style.height = size + 'px';
 
         el.animate([
             {
-                transform: `translate(${cx}px, ${cy}px) rotate(0deg)`,
+                transform: `translate(-50%, -50%) rotate(0deg) scale(1)`,
                 opacity: 1
             },
             {
-                transform: `translate(${cx + vx}px, ${cy + vy}px) rotate(${rotate}deg)`,
+                transform: `translate(calc(-50% + ${vx}px), calc(-50% + ${vy}px)) rotate(${rotate}deg) scale(0.5)`,
                 opacity: 0
             }
         ], {
-            duration: 1500 + Math.random() * 1000,
-            delay: Math.random() * 300,
-            easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
+            duration: 1200 + Math.random() * 800,
+            delay: Math.random() * 200,
+            easing: 'cubic-bezier(0.25, 1, 0.5, 1)', // Desacelera no final (explosão)
             fill: 'forwards'
         }).onfinish = () => el.remove();
     }
@@ -802,6 +891,14 @@ ui.playBtn.addEventListener('click', startGame);
 ui.rulesBtn.addEventListener('click', showRules);
 ui.backBtn.addEventListener('click', backToMenu);
 ui.closeRulesBtn.addEventListener('click', () => ui.rulesModal.classList.add('hidden'));
+
+// Som de clique global para botões
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (btn && !btn.disabled) {
+        SoundManager.play('click');
+    }
+});
 
 
 // Poderes
@@ -817,6 +914,7 @@ ui.powerFirstLetter.addEventListener('click', () => {
     if (gameState.power1Used) return;
     gameState.power1Used = true;
     ui.powersModal.classList.add('hidden');
+    SoundManager.play('poder 01');
 
     let delayCounter = 0;
     gameState.validWordsForLevel.forEach(wordObj => {
@@ -846,6 +944,7 @@ ui.powerRandomLetter.addEventListener('click', () => {
     if (gameState.power2Used) return;
     gameState.power2Used = true;
     ui.powersModal.classList.add('hidden');
+    SoundManager.play('poder 02');
 
     let delayCounter = 0;
     gameState.validWordsForLevel.forEach(wordObj => {
