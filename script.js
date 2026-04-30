@@ -949,11 +949,11 @@ function handleMotion(event) {
         const deltaZ = Math.abs(z - lastZ);
 
         // Limite abaixado para ficar super sensível e testarmos se funciona
-        const threshold = 8;
+        const threshold = 9;
 
         if (deltaX > threshold || deltaY > threshold || deltaZ > threshold) {
             const now = Date.now();
-            if (now - lastShakeTime > 1000) {
+            if (now - lastShakeTime > 600) {
                 lastShakeTime = now;
                 shuffleDeck();
             }
