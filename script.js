@@ -929,10 +929,65 @@ function fireConfetti() {
     }
 }
 
+// ── Sensores (Chacoalhar) ───────────────────────────────────────────────
+let lastShakeTime = 0;
+let lastX = null, lastY = null, lastZ = null;
+
+function handleMotion(event) {
+    // Só funciona no meio do jogo
+    if (ui.gameScreen.classList.contains('hidden') || !ui.modal.classList.contains('hidden')) return;
+
+    const acc = event.accelerationIncludingGravity || event.acceleration;
+    if (!acc) return;
+
+    const { x, y, z } = acc;
+
+    if (lastX !== null) {
+        const deltaX = Math.abs(x - lastX);
+        const deltaY = Math.abs(y - lastY);
+        const deltaZ = Math.abs(z - lastZ);
+
+        // Limite para detectar um chacoalhão (15 é um valor comum)
+        const threshold = 15;
+
+        if (deltaX > threshold || deltaY > threshold || deltaZ > threshold) {
+            const now = Date.now();
+            // Cooldown de 1 segundo para não chamar múltiplas vezes
+            if (now - lastShakeTime > 1000) {
+                lastShakeTime = now;
+                shuffleDeck();
+            }
+        }
+    }
+
+    lastX = x;
+    lastY = y;
+    lastZ = z;
+}
+
+async function requestShakePermission() {
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        try {
+            const permissionState = await DeviceMotionEvent.requestPermission();
+            if (permissionState === 'granted') {
+                window.addEventListener('devicemotion', handleMotion);
+            }
+        } catch (error) {
+            console.error("Erro ao pedir permissão do acelerômetro:", error);
+        }
+    } else {
+        // Para navegadores que não exigem permissão
+        window.addEventListener('devicemotion', handleMotion);
+    }
+}
+
 ui.shuffleBtn.addEventListener('click', shuffleDeck);
 ui.submitBtn.addEventListener('click', submitWord);
 ui.nextLevelBtn.addEventListener('click', nextLevel);
-ui.playBtn.addEventListener('click', startGame);
+ui.playBtn.addEventListener('click', () => {
+    requestShakePermission();
+    startGame();
+});
 ui.rulesBtn.addEventListener('click', showRules);
 ui.backBtn.addEventListener('click', backToMenu);
 ui.closeRulesBtn.addEventListener('click', () => ui.rulesModal.classList.add('hidden'));
