@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <div id="app">
         <!-- Tela de Menu -->
@@ -19,7 +21,7 @@
                 </div>
                 <div class="menu-controls">
                     <button id="play-btn" class="primary-btn">▶ Jogar</button>
-                    <button id="rules-btn" class="secondary-btn">📖 Regras</button>
+                    <button id="rules-btn" class="secondary-btn">📖 Como jogar</button>
                 </div>
             </div>
         </div>
@@ -45,7 +47,7 @@
                 <div id="input-area">
                     <!-- Letras selecionadas aparecem aqui -->
                 </div>
-                
+
                 <div id="deck-area">
                     <!-- Letras disponíveis aparecem aqui -->
                 </div>
@@ -58,7 +60,7 @@
             </footer>
         </div>
     </div>
-    
+
     <!-- Modal de Fim de Jogo ou Avisos -->
     <div id="modal" class="hidden">
         <div class="modal-content">
@@ -78,7 +80,8 @@
                     <span class="power-icon">🅰️</span>
                     <div class="power-info">
                         <strong>Letra Inicial</strong>
-                        <span style="font-size: 0.8rem; font-weight: 400; opacity: 0.8;">Revela a 1ª letra de tudo</span>
+                        <span style="font-size: 0.8rem; font-weight: 400; opacity: 0.8;">Revela a 1ª letra de
+                            tudo</span>
                     </div>
                 </button>
                 <button id="power-random-letter" class="power-btn">
@@ -100,7 +103,9 @@
             <div class="rules-sections">
                 <div class="rules-section">
                     <h3>🎯 Objetivo</h3>
-                    <p>Forme palavras usando as letras disponíveis no deck. O nível avança quando você descobre a <strong>Palavra Mestra</strong> — aquela que usa <em>todas</em> as letras de uma vez.</p>
+                    <p>Forme palavras usando as letras disponíveis no deck. O nível avança quando você descobre a
+                        <strong>Palavra Mestra</strong> — aquela que usa <em>todas</em> as letras de uma vez.
+                    </p>
                 </div>
                 <div class="rules-section">
                     <h3>▶ Como jogar</h3>
@@ -130,13 +135,28 @@
                 </div>
                 <div class="rules-section">
                     <h3>⚡ Poderes</h3>
-                    <p>Use <strong>Letra Inicial</strong> para revelar a 1ª letra de todas as palavras, ou <strong>Letra Surpresa</strong> para uma letra aleatória. Cada poder é usado uma vez por rodada.</p>
+                    <p>Use <strong>Letra Inicial</strong> para revelar a 1ª letra de todas as palavras, ou <strong>Letra
+                            Surpresa</strong> para uma letra aleatória. Cada poder é usado uma vez por rodada.</p>
                 </div>
             </div>
             <button id="close-rules-btn" class="primary-btn" style="margin-top: 16px; width: 100%;">Entendido!</button>
         </div>
     </div>
 
+    <!-- Modal de Confirmação de Saída -->
+    <div id="quit-modal" class="hidden">
+        <div class="modal-content">
+            <h2> Tem certeza que deseja terminar partida?</h2>
+            <p id="quit-modal-text">As palavras não encontradas serão reveladas.</p>
+            <div style="display: flex; gap: 10px; margin-top: 8px;">
+                <button id="quit-cancel-btn" class="secondary-btn" style="flex: 1;">Continuar</button>
+                <button id="quit-confirm-btn" class="primary-btn"
+                    style="flex: 1; background: linear-gradient(135deg, #a855f7, #ec4899);">Terminar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
+
 </html>

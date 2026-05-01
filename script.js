@@ -39,18 +39,18 @@ const SoundManager = {
         'acerto': 0.5,
         'erro': 0.5,
         'repetida': 0.4,
-        'palavra mestra': 0.5,
+        'palavra mestra': 0.4,
         'completo': 0.5,
         'poder 01': 0.5,
         'poder 02': 0.5,
         'click': 0.5,
 
         // Efeitos de grupo (bolinhas)
-        'balls 3.mp3': 0.4,
-        'balls 10.mp3': 0.4,
-        'balls 12.mp3': 0.4,
-        'balls 21.mp3': 0.4,
-        'balls 22.mp3': 0.4,
+        'balls 3.mp3': 0.3,
+        'balls 10.mp3': 0.3,
+        'balls 12.mp3': 0.3,
+        'balls 21.mp3': 0.3,
+        'balls 22.mp3': 0.3,
 
         // Efeitos de grupo (taps)
         'tap 1.mp3': 0.1,
@@ -143,7 +143,10 @@ const ui = {
     powerFirstLetter: document.getElementById('power-first-letter'),
     powerRandomLetter: document.getElementById('power-random-letter'),
     rulesModal: document.getElementById('rules-modal'),
-    closeRulesBtn: document.getElementById('close-rules-btn')
+    closeRulesBtn: document.getElementById('close-rules-btn'),
+    quitModal: document.getElementById('quit-modal'),
+    quitConfirmBtn: document.getElementById('quit-confirm-btn'),
+    quitCancelBtn: document.getElementById('quit-cancel-btn')
 };
 
 // Inicialização
@@ -153,6 +156,17 @@ async function initGame() {
         const response = await fetch("./palavras_letrox.json");
         if (!response.ok) throw new Error("Erro ao carregar dicionário");
         gameState.wordsDict = await response.json();
+
+        // Pré-filtra o pool de palavras mestras: tamanho 5–8, sem terminar em 's'
+        // Feito uma só vez ao carregar para máximo desempenho
+        gameState.masterWordPool = {};
+        for (let len = 5; len <= 8; len++) {
+            const key = len.toString();
+            const all = gameState.wordsDict[key] || [];
+            const filtered = all.filter(w => !w.toLowerCase().endsWith('s'));
+            // Usa a lista filtrada; se ficar vazia (improvável), usa a completa como fallback
+            gameState.masterWordPool[key] = filtered.length > 0 ? filtered : all;
+        }
 
         updateMenuRecords();
     } catch (error) {
@@ -195,24 +209,20 @@ function showRules() {
 }
 
 function backToMenu() {
-    // Mesma lógica de revelar palavras se houver alguma
-    const missedWords = gameState.validWordsForLevel.filter(w => !w.found);
-
-    if (missedWords.length > 0 && !gameState.revealed) {
-        gameState.revealed = true;
-        missedWords.forEach(w => w.revealed = true);
-        renderBoard();
-        ui.backBtn.textContent = "🚪";
-        disableFooter(true);
+    // Se o jogo já foi revelado (jogador clicou em Terminar antes),
+    // o segundo clique volta pro menu normalmente
+    if (gameState.revealed) {
+        saveRecords();
+        updateMenuRecords();
+        ui.gameScreen.classList.add('hidden');
+        ui.menuScreen.classList.remove('hidden');
+        ui.backBtn.style.background = '';
+        ui.backBtn.textContent = '⬅';
         return;
     }
 
-    // Volta pro menu
-    saveRecords();
-    updateMenuRecords();
-    ui.gameScreen.classList.add('hidden');
-    ui.menuScreen.classList.remove('hidden');
-    ui.backBtn.textContent = "⬅ Voltar";
+    // Abre o modal de confirmação — não vai pro menu ainda
+    ui.quitModal.classList.remove('hidden');
 }
 
 // Lógica de Geração de Nível
@@ -220,8 +230,8 @@ function loadLevel() {
     // Sorteia um tamanho aleatório entre 5 e 8 letras para a palavra mestre, independente do nível
     let targetLength = Math.floor(Math.random() * 4) + 5;
 
-    // Escolhe uma palavra mestre aleatória desse tamanho
-    const masterWords = gameState.wordsDict[targetLength.toString()];
+    // Usa o pool pré-filtrado (sem plurais) criado no initGame
+    const masterWords = gameState.masterWordPool[targetLength.toString()];
     if (!masterWords || masterWords.length === 0) {
         showModal("Fim de Jogo", "Você zerou nosso banco de palavras!", "Início", () => {
             gameState.level = 1;
@@ -242,15 +252,21 @@ function loadLevel() {
     // Encontra todos os anagramas possíveis
     gameState.validWordsForLevel = findValidAnagrams(gameState.currentMasterWord);
 
-    // Se a palavra gerar menos de 3 anagramas além dela mesma, tenta outra (se possível)
-    if (gameState.validWordsForLevel.length < 4) {
+    // Filtra palavras que geram uma quantidade equilibrada de anagramas (min 8, max 45)
+    const wordCount = gameState.validWordsForLevel.length;
+    if (wordCount < 8 || wordCount > 45) {
         return loadLevel(); // re-roll
     }
 
     // Prepara as letras do deck (removemos acentos para o deck ser limpo)
     const unaccentedMaster = removeAccents(gameState.currentMasterWord);
     gameState.deckLetters = unaccentedMaster.split('');
-    shuffleArray(gameState.deckLetters);
+
+    // Garante que o embaralhamento inicial não forme a palavra mestre
+    do {
+        shuffleArray(gameState.deckLetters);
+    } while (gameState.deckLetters.join('') === unaccentedMaster && unaccentedMaster.length > 1);
+
     gameState.inputLetters = [];
 
     // Atualiza a UI
@@ -334,43 +350,29 @@ function renderBoard() {
     const itemGapH = 2;  // gap entre letras dentro de uma linha
     const colGap = 12; // gap entre colunas
 
-    let bestSlotSize = 0;
-    let bestNumCols = 1;
+    // Define o layout fixo: 15 palavras por coluna no máximo
+    const MAX_PER_COL = 15;
+    const bestNumCols = Math.ceil(totalWords / MAX_PER_COL);
+    const maxWordsInAnyCol = Math.min(MAX_PER_COL, totalWords);
 
-    // Itera pelo número de colunas e encontra o que maximiza o slotSize
-    for (let cols = 1; cols <= totalWords; cols++) {
-        // Largura por coluna: se já ficou impossível não adianta tentar mais colunas
-        const maxByW = Math.floor(
-            (availableW + itemGapH - (cols - 1) * colGap) / cols / maxWordLen - itemGapH
-        );
-        if (maxByW < 8) break; // mais colunas só piora a largura
+    // Calcula o tamanho da letra baseado na grade fixa
+    const maxByW = Math.floor(
+        (availableW + itemGapH - (bestNumCols - 1) * colGap) / bestNumCols / maxWordLen - itemGapH
+    );
+    const maxByH = Math.floor((availableH + itemGapV) / maxWordsInAnyCol - itemGapV);
 
-        const wordsPerCol = Math.ceil(totalWords / cols);
-        const maxByH = Math.floor((availableH + itemGapV) / wordsPerCol - itemGapV);
+    let bestSlotSize = Math.min(maxByH, maxByW);
 
-        const slotSize = Math.min(maxByH, maxByW);
-
-        if (slotSize > bestSlotSize) {
-            bestSlotSize = slotSize;
-            bestNumCols = cols;
-        }
-    }
-
-    // Garante mínimo de 8px e máximo estético de 36px
+    // Garante mínimo de 12px e máximo estético de 36px
     bestSlotSize = Math.min(36, Math.max(12, bestSlotSize));
 
     document.documentElement.style.setProperty('--slot-size', `${bestSlotSize}px`);
     document.documentElement.style.setProperty('--slot-font', `${Math.round(bestSlotSize * 0.65)}px`);
 
-    // Distribui palavras entre colunas de forma balanceada (diferença máxima de 1)
-    const basePerCol = Math.floor(totalWords / bestNumCols);
-    const extra = totalWords % bestNumCols; // primeiras `extra` colunas levam +1
-    // Monta array com o limite de cada coluna
+    // Monta array com o limite de cada coluna (15, 30, 45...)
     const colLimits = [];
-    let acc = 0;
-    for (let c = 0; c < bestNumCols; c++) {
-        acc += basePerCol + (c < extra ? 1 : 0);
-        colLimits.push(acc);
+    for (let c = 1; c <= bestNumCols; c++) {
+        colLimits.push(c * MAX_PER_COL);
     }
 
     let currentColDiv;
@@ -623,7 +625,14 @@ function shuffleDeck() {
 
     // 2. Cria uma permutação de índices e embaralha
     const perm = oldChars.map((_, i) => i);
-    shuffleArray(perm);
+    const unaccentedMaster = removeAccents(gameState.currentMasterWord);
+
+    // Garante que o embaralhamento não resulte na palavra mestre formada no deck
+    do {
+        shuffleArray(perm);
+        const potentialOrder = perm.map(i => oldChars[i]).join('');
+        if (potentialOrder !== unaccentedMaster || unaccentedMaster.length <= 1) break;
+    } while (true);
 
     // 3. Aplica a permutação ao array de letras
     gameState.deckLetters = perm.map(i => oldChars[i]);
@@ -736,7 +745,11 @@ function submitWord() {
         } else {
             wordObj.found = true;
             let playedMasterSound = false;
-            if (wordObj.isMaster && !gameState.masterSoundPlayed) {
+            let levelFinished = gameState.validWordsForLevel.every(w => w.found);
+
+            if (levelFinished) {
+                SoundManager.play('completo');
+            } else if (wordObj.isMaster && !gameState.masterSoundPlayed) {
                 gameState.masterSoundPlayed = true;
                 playedMasterSound = true;
                 SoundManager.play('palavra mestra');
@@ -795,9 +808,6 @@ function submitWord() {
             if (gameState.validWordsForLevel.every(w => w.found)) {
                 setTimeout(() => {
                     fireConfetti();
-                    if (!playedMasterSound) {
-                        SoundManager.play('completo');
-                    }
 
                     setTimeout(() => {
                         showModal("Nível Concluído!", "Parabéns! Você encontrou TODAS as palavras ocultas!", "Próximo Nível", nextLevel);
@@ -991,6 +1001,31 @@ ui.playBtn.addEventListener('click', () => {
 ui.rulesBtn.addEventListener('click', showRules);
 ui.backBtn.addEventListener('click', backToMenu);
 ui.closeRulesBtn.addEventListener('click', () => ui.rulesModal.classList.add('hidden'));
+
+// Botão Cancelar do modal de saída
+ui.quitCancelBtn.addEventListener('click', () => {
+    ui.quitModal.classList.add('hidden');
+});
+
+// Botão Confirmar do modal de saída
+ui.quitConfirmBtn.addEventListener('click', () => {
+    ui.quitModal.classList.add('hidden');
+
+    // Revela palavras não encontradas
+    const missedWords = gameState.validWordsForLevel.filter(w => !w.found);
+    if (missedWords.length > 0) {
+        gameState.revealed = true;
+        missedWords.forEach(w => w.revealed = true);
+        renderBoard();
+    } else {
+        gameState.revealed = true;
+    }
+
+    // Botão de voltar fica rosa/roxo sinalizando que pode sair
+    ui.backBtn.style.background = 'linear-gradient(135deg, #a855f7, #ec4899)';
+    ui.backBtn.textContent = '⬅';
+    disableFooter(true);
+});
 
 // Som de clique global para botões
 document.addEventListener('click', (e) => {
