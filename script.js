@@ -1,3 +1,14 @@
+// Registra o Service Worker para transformar em PWA
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(registration => {
+            console.log('ServiceWorker registrado com sucesso:', registration.scope);
+        }).catch(err => {
+            console.log('Falha ao registrar o ServiceWorker:', err);
+        });
+    });
+}
+
 // Estado do Jogo
 const activeGhosts = new Map();
 
@@ -739,7 +750,7 @@ function shuffleDeck() {
     renderDeck(true); // hideAll = true
 
     // 5. Captura as referências das esferas e as NOVAS posições dos wrappers
-    const GHOST_DURATION = 800;
+    const GHOST_DURATION = 1000;
     const newWrappers = Array.from(ui.deckArea.querySelectorAll('.sphere-wrapper'));
     const newRects = newWrappers.map(w => w.getBoundingClientRect());
 
