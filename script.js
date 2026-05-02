@@ -1,4 +1,5 @@
 // Registra o Service Worker para transformar em PWA
+/*
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').then(registration => {
@@ -8,6 +9,7 @@ if ('serviceWorker' in navigator) {
         });
     });
 }
+*/
 
 // Estado do Jogo
 const activeGhosts = new Map();
@@ -541,11 +543,30 @@ function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
     const dx = cx2 - cx1;
     const dy = cy2 - cy1;
 
-    const baseWidth = destRect.width;
-    const baseHeight = destRect.height;
+    const baseWidth = Math.max(10, destRect.width);
+    const baseHeight = Math.max(10, destRect.height);
 
-    const initScaleX = currentStartRect.width / baseWidth;
-    const initScaleY = currentStartRect.height / baseHeight;
+    let initScaleX = currentStartRect.width / baseWidth;
+    let initScaleY = currentStartRect.height / baseHeight;
+
+    // PREVENÇÃO DE BUG CRÍTICO: Trava a escala visual máxima para evitar crescimento infinito
+    // caso o navegador reporte tamanhos bizarros durante o spam de cliques.
+    initScaleX = Math.min(1.4, Math.max(0.4, initScaleX));
+    initScaleY = Math.min(1.4, Math.max(0.4, initScaleY));
+
+    let normalStartScaleX = initScaleX;
+    let normalStartScaleY = initScaleY;
+
+    // Extrai o tamanho base não-escalado da animação anterior (se houver)
+    if (ghost.style && ghost.style.width) {
+        const oldBaseWidth = parseFloat(ghost.style.width);
+        const oldBaseHeight = parseFloat(ghost.style.height);
+        if (oldBaseWidth) normalStartScaleX = oldBaseWidth / baseWidth;
+        if (oldBaseHeight) normalStartScaleY = oldBaseHeight / baseHeight;
+        
+        normalStartScaleX = Math.min(1.2, Math.max(0.8, normalStartScaleX));
+        normalStartScaleY = Math.min(1.2, Math.max(0.8, normalStartScaleY));
+    }
 
     ghost.style.cssText = `
         position: fixed;
@@ -560,8 +581,8 @@ function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
     `;
 
     const scaleMultiplier = 1.3; // Cresce 30% no meio para dar efeito de salto
-    const midScaleX = ((initScaleX + 1) / 2) * scaleMultiplier;
-    const midScaleY = ((initScaleY + 1) / 2) * scaleMultiplier;
+    const midScaleX = ((normalStartScaleX + 1) / 2) * scaleMultiplier;
+    const midScaleY = ((normalStartScaleY + 1) / 2) * scaleMultiplier;
 
     const shake1X = (Math.random() - 0.5) * 3; // Valores entre -3 e 3
     const shake1Y = (Math.random() - 0.5) * 3;
