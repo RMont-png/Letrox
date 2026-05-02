@@ -56,15 +56,15 @@ const SoundManager = {
         'click': 0.5,
 
         // Efeitos de grupo (bolinhas)
-        'balls 3.mp3': 0.3,
-        'balls 10.mp3': 0.3,
-        'balls 12.mp3': 0.3,
-        'balls 21.mp3': 0.3,
-        'balls 22.mp3': 0.3,
+        'balls 3.mp3': 0.2,
+        'balls 10.mp3': 0.2,
+        'balls 12.mp3': 0.2,
+        'balls 21.mp3': 0.2,
+        'balls 22.mp3': 0.2,
 
         // Efeitos de grupo (taps)
         'tap 1.mp3': 0.1,
-        'tap 2.mp3': 0.06,
+        'tap 2.mp3': 0.09,
         'tap 3.mp3': 0.3,
         'tap 4.mp3': 0.3
     },
@@ -502,7 +502,7 @@ function renderDeck(hideAll = false) {
  * @param {Object} options - { duration, arcY, onDone }
  */
 function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
-    const { duration = 800, arcY = 0, delay = 0, onDone, providedGhost } = options;
+    const { duration = 800, arcY = 0, delay = 0, onDone, providedGhost, playTapSound = false } = options;
 
     let ghost;
     let currentStartRect = startRect;
@@ -523,26 +523,34 @@ function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
         document.body.appendChild(ghost);
     }
 
+    const cx1 = currentStartRect.left + currentStartRect.width / 2;
+    const cy1 = currentStartRect.top + currentStartRect.height / 2;
+    const cx2 = destRect.left + destRect.width / 2;
+    const cy2 = destRect.top + destRect.height / 2;
+    const dx = cx2 - cx1;
+    const dy = cy2 - cy1;
+
+    const baseWidth = destRect.width;
+    const baseHeight = destRect.height;
+
+    const initScaleX = currentStartRect.width / baseWidth;
+    const initScaleY = currentStartRect.height / baseHeight;
+
     ghost.style.cssText = `
         position: fixed;
-        left: ${currentStartRect.left}px;
-        top: ${currentStartRect.top}px;
-        width: ${currentStartRect.width}px;
-        height: ${currentStartRect.height}px;
+        left: ${cx1 - baseWidth / 2}px;
+        top: ${cy1 - baseHeight / 2}px;
+        width: ${baseWidth}px;
+        height: ${baseHeight}px;
         margin: 0;
         z-index: 9999;
         pointer-events: none;
         transition: none;
     `;
 
-    const dx = destRect.left - currentStartRect.left;
-    const dy = destRect.top - currentStartRect.top;
-    const scaleX = destRect.width / currentStartRect.width;
-    const scaleY = destRect.height / currentStartRect.height;
-
     const scaleMultiplier = 1.3; // Cresce 30% no meio para dar efeito de salto
-    const midScaleX = ((scaleX + 1) / 2) * scaleMultiplier;
-    const midScaleY = ((scaleY + 1) / 2) * scaleMultiplier;
+    const midScaleX = ((initScaleX + 1) / 2) * scaleMultiplier;
+    const midScaleY = ((initScaleY + 1) / 2) * scaleMultiplier;
 
     const shake1X = (Math.random() - 0.5) * 3; // Valores entre -3 e 3
     const shake1Y = (Math.random() - 0.5) * 3;
@@ -551,20 +559,20 @@ function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
 
     const keyframes = arcY !== 0
         ? [
-            { transform: `translate(0,0) scale(1)`, opacity: 1, offset: 0 },
+            { transform: `translate(0,0) scale(${initScaleX}, ${initScaleY})`, opacity: 1, offset: 0 },
             { transform: `translate(${dx * 0.5}px, ${dy * 0.5 + arcY}px) scale(${midScaleX}, ${midScaleY})`, opacity: 1, offset: 0.5 },
             // Tremidinha aleatória mais rápida antes de encaixar
-            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 0.98 },
-            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 0.99 },
-            { transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 1 }
+            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(1, 1)`, opacity: 1, offset: 0.98 },
+            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(1, 1)`, opacity: 1, offset: 0.99 },
+            { transform: `translate(${dx}px, ${dy}px) scale(1, 1)`, opacity: 1, offset: 1 }
         ]
         : [
-            { transform: `translate(0,0) scale(1)`, opacity: 1, offset: 0 },
+            { transform: `translate(0,0) scale(${initScaleX}, ${initScaleY})`, opacity: 1, offset: 0 },
             { transform: `translate(${dx * 0.5}px, ${dy * 0.5}px) scale(${midScaleX}, ${midScaleY})`, opacity: 1, offset: 0.5 },
             // Tremidinha aleatória mais rápida antes de encaixar
-            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 0.98 },
-            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 0.99 },
-            { transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 1 }
+            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(1, 1)`, opacity: 1, offset: 0.98 },
+            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(1, 1)`, opacity: 1, offset: 0.99 },
+            { transform: `translate(${dx}px, ${dy}px) scale(1, 1)`, opacity: 1, offset: 1 }
         ];
 
     const anim = ghost.animate(keyframes, {
@@ -575,6 +583,14 @@ function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
     });
 
     activeGhosts.set(id, { ghost, anim });
+
+    if (playTapSound) {
+        setTimeout(() => {
+            if (activeGhosts.has(id) && activeGhosts.get(id).anim === anim) {
+                SoundManager.playRandom('tap');
+            }
+        }, delay + duration * 0.48); // Exatamente no momento que a tremidinha começa
+    }
 
     anim.onfinish = () => {
         const currentRecord = activeGhosts.get(id);
@@ -615,8 +631,8 @@ function moveFromDeckToInput(deckIndex, char) {
             const ghostId = `deck_${deckIndex}`;
 
             animateFLIPGhost(ghostId, char, startRect, destRect, {
+                playTapSound: true,
                 onDone: () => {
-                    SoundManager.playRandom('tap');
                     gameState.hiddenInputSlots.delete(inputIdx);
                     const freshSphere = ui.inputArea.querySelector(`.sphere-wrapper[data-input-slot='${inputIdx}'] .input-letter`);
                     if (freshSphere) {
@@ -655,8 +671,8 @@ function moveFromInputToDeck(inputIndex) {
             const ghostId = `deck_${item.deckIndex}`;
 
             animateFLIPGhost(ghostId, item.char, startRect, destRect, {
+                playTapSound: true,
                 onDone: () => {
-                    SoundManager.playRandom('tap');
                     gameState.hiddenDeckSlots.delete(item.deckIndex);
                     const freshSphere = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${item.deckIndex}'] .deck-letter`);
                     if (freshSphere) {
@@ -800,8 +816,8 @@ function returnAllLettersWithAnimation() {
             const ghostId = `deck_${item.deckIndex}`;
 
             animateFLIPGhost(ghostId, item.char, startRect, destRect, {
+                playTapSound: true,
                 onDone: () => {
-                    SoundManager.playRandom('tap');
                     gameState.hiddenDeckSlots.delete(item.deckIndex);
                     const freshSphere = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${item.deckIndex}'] .deck-letter`);
                     if (freshSphere) {
@@ -831,10 +847,8 @@ function submitWord() {
             SoundManager.play('repetida');
             showFeedback(ui.inputArea, 'shake');
             showToast('Você já encontrou<br>essa palavra kkk', 'emoji_kkk.png');
-            // Retorna ao deck após o feedback com animação
-            setTimeout(() => {
-                returnAllLettersWithAnimation();
-            }, 400);
+            // Retorna ao deck após o feedback com animação (agora sem atraso, atendendo ao pedido)
+            returnAllLettersWithAnimation();
         } else {
             wordObj.found = true;
             let playedMasterSound = false;
@@ -914,9 +928,7 @@ function submitWord() {
         showFeedback(ui.inputArea, 'error-bg');
         showFeedback(ui.inputArea, 'shake');
 
-        setTimeout(() => {
-            returnAllLettersWithAnimation();
-        }, 500);
+        returnAllLettersWithAnimation();
     }
 }
 
@@ -1242,6 +1254,9 @@ ui.powerRandomLetter.addEventListener('click', () => {
 
 // Inicializa
 initGame();
+let currentToast = null;
+let toastTimeout = null;
+
 function showToast(message, imageUrl = null) {
     let container = document.querySelector('.toast-container');
     if (!container) {
@@ -1250,27 +1265,48 @@ function showToast(message, imageUrl = null) {
         document.body.appendChild(container);
     }
 
-    const toast = document.createElement('div');
-    toast.className = 'toast-message';
+    if (currentToast) {
+        // Se já existe um toast, limpa o timer antigo e reseta a animação
+        clearTimeout(toastTimeout);
+        
+        const textSpan = currentToast.querySelector('span');
+        if (textSpan) textSpan.innerHTML = message;
+        
+        const img = currentToast.querySelector('.toast-icon');
+        if (img && imageUrl) img.src = imageUrl;
 
-    if (imageUrl) {
-        const img = document.createElement('img');
-        img.src = imageUrl;
-        img.className = 'toast-icon';
-        toast.appendChild(img);
+        // Reinicia a animação de fade-out (se houver no CSS)
+        currentToast.style.animation = 'none';
+        currentToast.offsetHeight; // trigger reflow
+        currentToast.style.animation = '';
+    } else {
+        const toast = document.createElement('div');
+        toast.className = 'toast-message';
+
+        if (imageUrl) {
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.className = 'toast-icon';
+            toast.appendChild(img);
+        }
+
+        const textSpan = document.createElement('span');
+        textSpan.innerHTML = message;
+        toast.appendChild(textSpan);
+
+        container.appendChild(toast);
+        currentToast = toast;
     }
 
-    const textSpan = document.createElement('span');
-    textSpan.innerHTML = message;
-    toast.appendChild(textSpan);
-
-    container.appendChild(toast);
-
     // Remove o elemento após a animação (3 segundos total conforme CSS)
-    setTimeout(() => {
-        toast.remove();
+    toastTimeout = setTimeout(() => {
+        if (currentToast) {
+            currentToast.remove();
+            currentToast = null;
+            toastTimeout = null;
+        }
         // Remove container se estiver vazio
-        if (container.childNodes.length === 0) {
+        if (container && container.childNodes.length === 0) {
             container.remove();
         }
     }, 3000);
