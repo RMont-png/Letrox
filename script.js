@@ -65,8 +65,8 @@ const SoundManager = {
         // Efeitos de grupo (taps)
         'tap 1.mp3': 0.1,
         'tap 2.mp3': 0.09,
-        'tap 3.mp3': 0.3,
-        'tap 4.mp3': 0.3
+        'tap 3.mp3': 0.1,
+        'tap 4.mp3': 0.2
     },
     _cache: {},
     preload() {
@@ -1268,10 +1268,10 @@ function showToast(message, imageUrl = null) {
     if (currentToast) {
         // Se já existe um toast, limpa o timer antigo e reseta a animação
         clearTimeout(toastTimeout);
-        
+
         const textSpan = currentToast.querySelector('span');
         if (textSpan) textSpan.innerHTML = message;
-        
+
         const img = currentToast.querySelector('.toast-icon');
         if (img && imageUrl) img.src = imageUrl;
 
