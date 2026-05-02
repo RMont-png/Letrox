@@ -21,6 +21,7 @@
                 </div>
                 <div class="menu-controls">
                     <button id="play-btn" class="primary-btn">▶ Jogar</button>
+                    <button id="settings-btn" class="secondary-btn">⚙️ Configurações</button>
                     <button id="rules-btn" class="secondary-btn">📖 Como jogar</button>
                 </div>
             </div>
@@ -153,6 +154,59 @@
                 <button id="quit-confirm-btn" class="primary-btn"
                     style="flex: 1; background: linear-gradient(135deg, #a855f7, #ec4899);">Terminar</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal de Configurações -->
+    <div id="settings-modal" class="hidden">
+        <div class="modal-content settings-content">
+            <h2>⚙️ Configurações</h2>
+            <div class="settings-list" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
+                <label class="setting-item"
+                    style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.35); padding: 16px 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer;">
+                    <span style="font-size: 1.1rem; color: var(--text-main); text-align: left;">🔊 Sons</span>
+                    <label class="switch" style="margin-left: 15px;">
+                        <input type="checkbox" id="setting-sound" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </label>
+                <label class="setting-item"
+                    style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.35); padding: 16px 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer;">
+                    <span style="font-size: 1.1rem; color: var(--text-main); text-align: left;">📳 Shake to
+                        Shuffle</span>
+                    <label class="switch" style="margin-left: 15px;">
+                        <input type="checkbox" id="setting-shake" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </label>
+            </div>
+
+            <div class="version-section"
+                style="margin-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
+                <button id="version-btn"
+                    style="background: none; border: none; color: var(--primary); font-size: 0.9rem; font-weight: bold; cursor: pointer; text-decoration: underline;">Versão
+                    0.4.0 ▼</button>
+                <div id="changelog-content" class="changelog-content hidden"
+                    style="margin-top: 10px; background: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 8px; text-align: left; font-size: 0.85rem; color: var(--text-muted); max-height: 150px; overflow-y: auto;">
+                    <h3 style="color: var(--secondary); margin-bottom: 5px; font-size: 0.95rem;">Novidades</h3>
+                    <ul style="padding-left: 20px;">
+                        <li style="margin-bottom: 4px;">Novo botão de configurações. Agora você pode ativar/desativar
+                            os efeitos sonoros
+                            e o shake para embaralhar.
+                        </li>
+                        <li style="margin-bottom: 4px;">Adicionado os sons de impacto das bolinhas voltando pro deck
+                            ao limpar o imput.</li>
+                        <li style="margin-bottom: 4px;">Efeito "tremidinha" ao aterrissar as bolinhas.</li>
+                        <li style="margin-bottom: 4px;">Correção do bug que fazia as bolinhas se multiplicarem ao
+                            espamar o embaralhar.</li>
+                        <li style="margin-bottom: 4px;">Correção do bug que fazia aparecer um clone da letra ao digitar
+                            rápido.</li>
+                        <li style="margin-bottom: 4px;">Adição de 40 novas palavras no dicionário do jogo.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <button id="close-settings-btn" class="secondary-btn" style="margin-top: 15px; width: 100%;">Voltar</button>
         </div>
     </div>
 

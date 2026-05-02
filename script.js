@@ -1,4 +1,12 @@
 // Estado do Jogo
+const activeGhosts = new Map();
+
+// Configurações do Usuário (salvas no localStorage)
+const userSettings = JSON.parse(localStorage.getItem('letrox_settings')) || {
+    sound: true,
+    shake: true
+};
+
 const gameState = {
     level: 1,
     score: 0,
@@ -7,6 +15,8 @@ const gameState = {
     validWordsForLevel: [], // Array de objetos {word: "...", length: 3, found: false}
     deckLetters: [],
     inputLetters: [],
+    hiddenInputSlots: new Set(),
+    hiddenDeckSlots: new Set(),
     masterWordFound: false,
     revealed: false,
     power1Used: false,
@@ -54,7 +64,7 @@ const SoundManager = {
 
         // Efeitos de grupo (taps)
         'tap 1.mp3': 0.1,
-        'tap 2.mp3': 0.1,
+        'tap 2.mp3': 0.06,
         'tap 3.mp3': 0.3,
         'tap 4.mp3': 0.3
     },
@@ -74,6 +84,7 @@ const SoundManager = {
         }
     },
     play(name) {
+        if (!userSettings.sound) return;
         const a = this._cache[name];
         if (!a) return;
         const clone = a.cloneNode();
@@ -84,6 +95,7 @@ const SoundManager = {
         clone.play().catch(() => { });
     },
     playRandom(group) {
+        if (!userSettings.sound) return;
         const pool = this._cache[group];
         if (!pool || !pool.length) return;
         const a = pool[Math.floor(Math.random() * pool.length)];
@@ -415,7 +427,7 @@ function renderBoard() {
 }
 
 
-function renderInput(hiddenIndex = -1) {
+function renderInput() {
     ui.inputArea.innerHTML = '';
     const wordLen = gameState.deckLetters.length;
 
@@ -432,7 +444,7 @@ function renderInput(hiddenIndex = -1) {
             letterDiv.dataset.deckIndex = letterObj.deckIndex;
 
             // Criado já invisível para evitar flash durante animação
-            if (i === hiddenIndex) {
+            if (gameState.hiddenInputSlots.has(i)) {
                 letterDiv.style.opacity = '0';
                 letterDiv.style.transition = 'none';
             }
@@ -449,10 +461,7 @@ function renderInput(hiddenIndex = -1) {
     }
 }
 
-function renderDeck(hiddenIndices = [], hideAll = false) {
-    if (!Array.isArray(hiddenIndices)) {
-        hiddenIndices = hiddenIndices === -1 ? [] : [hiddenIndices];
-    }
+function renderDeck(hideAll = false) {
     ui.deckArea.innerHTML = '';
     gameState.deckLetters.forEach((char, index) => {
         const isUsed = gameState.inputLetters.some(item => item && item.deckIndex === index);
@@ -466,7 +475,7 @@ function renderDeck(hiddenIndices = [], hideAll = false) {
         letterDiv.dataset.deckIndex = index;
         if (isUsed) letterDiv.classList.add('used');
         // Criado já invisível para evitar flash durante animação
-        if (hiddenIndices.includes(index) || hideAll) {
+        if (gameState.hiddenDeckSlots.has(index) || hideAll) {
             letterDiv.style.opacity = '0';
             letterDiv.style.transition = 'none';
         }
@@ -492,54 +501,88 @@ function renderDeck(hiddenIndices = [], hideAll = false) {
  * @param {DOMRect} destRect
  * @param {Object} options - { duration, arcY, onDone }
  */
-function animateFLIPGhost(char, startRect, destRect, options = {}) {
-    const { duration = 300, arcY = 0, delay = 0, onDone } = options;
+function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
+    const { duration = 800, arcY = 0, delay = 0, onDone, providedGhost } = options;
 
-    const ghost = document.createElement('div');
-    ghost.className = 'deck-letter';
-    ghost.textContent = char;
+    let ghost;
+    let currentStartRect = startRect;
+
+    if (activeGhosts.has(id)) {
+        const existing = activeGhosts.get(id);
+        currentStartRect = existing.ghost.getBoundingClientRect();
+        if (existing.anim) {
+            existing.anim.cancel();
+        }
+        ghost = existing.ghost;
+    } else if (providedGhost) {
+        ghost = providedGhost;
+    } else {
+        ghost = document.createElement('div');
+        ghost.className = 'deck-letter';
+        ghost.textContent = char;
+        document.body.appendChild(ghost);
+    }
+
     ghost.style.cssText = `
         position: fixed;
-        left: ${startRect.left}px;
-        top: ${startRect.top}px;
-        width: ${startRect.width}px;
-        height: ${startRect.height}px;
+        left: ${currentStartRect.left}px;
+        top: ${currentStartRect.top}px;
+        width: ${currentStartRect.width}px;
+        height: ${currentStartRect.height}px;
         margin: 0;
         z-index: 9999;
         pointer-events: none;
         transition: none;
     `;
-    document.body.appendChild(ghost);
 
-    const dx = destRect.left - startRect.left;
-    const dy = destRect.top - startRect.top;
-    const scaleX = destRect.width / startRect.width;
-    const scaleY = destRect.height / startRect.height;
+    const dx = destRect.left - currentStartRect.left;
+    const dy = destRect.top - currentStartRect.top;
+    const scaleX = destRect.width / currentStartRect.width;
+    const scaleY = destRect.height / currentStartRect.height;
 
     const scaleMultiplier = 1.3; // Cresce 30% no meio para dar efeito de salto
     const midScaleX = ((scaleX + 1) / 2) * scaleMultiplier;
     const midScaleY = ((scaleY + 1) / 2) * scaleMultiplier;
 
+    const shake1X = (Math.random() - 0.5) * 3; // Valores entre -3 e 3
+    const shake1Y = (Math.random() - 0.5) * 3;
+    const shake2X = (Math.random() - 0.5) * 3;
+    const shake2Y = (Math.random() - 0.5) * 3;
+
     const keyframes = arcY !== 0
         ? [
             { transform: `translate(0,0) scale(1)`, opacity: 1, offset: 0 },
             { transform: `translate(${dx * 0.5}px, ${dy * 0.5 + arcY}px) scale(${midScaleX}, ${midScaleY})`, opacity: 1, offset: 0.5 },
+            // Tremidinha aleatória mais rápida antes de encaixar
+            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 0.98 },
+            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 0.99 },
             { transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 1 }
         ]
         : [
             { transform: `translate(0,0) scale(1)`, opacity: 1, offset: 0 },
             { transform: `translate(${dx * 0.5}px, ${dy * 0.5}px) scale(${midScaleX}, ${midScaleY})`, opacity: 1, offset: 0.5 },
+            // Tremidinha aleatória mais rápida antes de encaixar
+            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 0.98 },
+            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 0.99 },
             { transform: `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`, opacity: 1, offset: 1 }
         ];
 
-    ghost.animate(keyframes, {
+    const anim = ghost.animate(keyframes, {
         duration,
         delay,
-        easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        easing: 'cubic-bezier(0.08, 0.7, 0.01, 1.0)', // Começa rápido e desacelera (snappy ease-out)
         fill: 'both'
-    }).onfinish = () => {
-        if (onDone) onDone(); // revela destino ANTES de remover o ghost
-        ghost.remove();
+    });
+
+    activeGhosts.set(id, { ghost, anim });
+
+    anim.onfinish = () => {
+        const currentRecord = activeGhosts.get(id);
+        if (currentRecord && currentRecord.anim === anim) {
+            if (onDone) onDone();
+            ghost.remove();
+            activeGhosts.delete(id);
+        }
     };
 }
 
@@ -559,8 +602,9 @@ function moveFromDeckToInput(deckIndex, char) {
     }
     const inputIdx = emptyIndex;
 
-    // Renderiza input com a nova letra já invisível
-    renderInput(inputIdx);
+    // Prepara as views
+    gameState.hiddenInputSlots.add(inputIdx);
+    renderInput();
     renderDeck();
 
     if (startRect) {
@@ -568,15 +612,18 @@ function moveFromDeckToInput(deckIndex, char) {
         if (filledSlot) {
             const destRect = filledSlot.getBoundingClientRect();
             const destSphere = filledSlot.querySelector('.input-letter');
+            const ghostId = `deck_${deckIndex}`;
 
-            animateFLIPGhost(char, startRect, destRect, {
+            animateFLIPGhost(ghostId, char, startRect, destRect, {
                 onDone: () => {
                     SoundManager.playRandom('tap');
-                    if (destSphere) {
-                        destSphere.style.opacity = '1';
+                    gameState.hiddenInputSlots.delete(inputIdx);
+                    const freshSphere = ui.inputArea.querySelector(`.sphere-wrapper[data-input-slot='${inputIdx}'] .input-letter`);
+                    if (freshSphere) {
+                        freshSphere.style.opacity = '1';
                         requestAnimationFrame(() => {
-                            destSphere.style.transition = '';
-                            destSphere.style.opacity = '';
+                            freshSphere.style.transition = '';
+                            freshSphere.style.opacity = '';
                         });
                     }
                 }
@@ -592,23 +639,31 @@ function moveFromInputToDeck(inputIndex) {
     const item = gameState.inputLetters[inputIndex];
 
     gameState.inputLetters[inputIndex] = null;
+
+    if (item) {
+        gameState.hiddenDeckSlots.add(item.deckIndex);
+    }
+
     renderInput();
-    // Renderiza o deck já com a esfera destino oculta (sem transição) para evitar flash
-    renderDeck(item ? item.deckIndex : -1);
+    renderDeck();
 
     if (startRect && item) {
         const destWrapper = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${item.deckIndex}']`);
         if (destWrapper) {
             const destRect = destWrapper.getBoundingClientRect();
             const destSphere = destWrapper.querySelector('.deck-letter');
-            animateFLIPGhost(item.char, startRect, destRect, {
+            const ghostId = `deck_${item.deckIndex}`;
+
+            animateFLIPGhost(ghostId, item.char, startRect, destRect, {
                 onDone: () => {
                     SoundManager.playRandom('tap');
-                    if (destSphere) {
-                        destSphere.style.opacity = '1';
+                    gameState.hiddenDeckSlots.delete(item.deckIndex);
+                    const freshSphere = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${item.deckIndex}'] .deck-letter`);
+                    if (freshSphere) {
+                        freshSphere.style.opacity = '1';
                         requestAnimationFrame(() => {
-                            destSphere.style.transition = '';
-                            destSphere.style.opacity = '';
+                            freshSphere.style.transition = '';
+                            freshSphere.style.opacity = '';
                         });
                     }
                 }
@@ -620,8 +675,26 @@ function moveFromInputToDeck(inputIndex) {
 function shuffleDeck() {
     // 1. Captura posição EXATA de cada wrapper antes de mexer em nada
     const wrappers = Array.from(ui.deckArea.querySelectorAll('.sphere-wrapper'));
-    const oldRects = wrappers.map(w => w.getBoundingClientRect());
+    // Se a letra já for um fantasma voando, pega a posição do fantasma
+    const oldRects = wrappers.map((w, i) => {
+        const ghostId = `deck_${i}`;
+        if (activeGhosts.has(ghostId)) {
+            return activeGhosts.get(ghostId).ghost.getBoundingClientRect();
+        }
+        return w.getBoundingClientRect();
+    });
     const oldChars = [...gameState.deckLetters];
+
+    // Removemos os fantasmas do deck do activeGhosts temporariamente
+    // para não haver roubo de referência durante o loop de embaralhar
+    const capturedGhosts = new Map();
+    activeGhosts.forEach((record, id) => {
+        if (id.startsWith('deck_')) {
+            capturedGhosts.set(id, record);
+            record.anim.cancel();
+        }
+    });
+    capturedGhosts.forEach((_, id) => activeGhosts.delete(id));
 
     // 2. Cria uma permutação de índices e embaralha
     const perm = oldChars.map((_, i) => i);
@@ -645,11 +718,12 @@ function shuffleDeck() {
         }
     });
 
-    renderDeck(-1, true);
+    // Adiciona todos os índices ao hiddenDeckSlots para a animação de shuffle
+    gameState.deckLetters.forEach((_, i) => gameState.hiddenDeckSlots.add(i));
+    renderDeck(true); // hideAll = true
 
     // 5. Captura as referências das esferas e as NOVAS posições dos wrappers
-    const GHOST_DURATION = 600;
-    const newSpheres = Array.from(ui.deckArea.querySelectorAll('.deck-letter'));
+    const GHOST_DURATION = 800;
     const newWrappers = Array.from(ui.deckArea.querySelectorAll('.sphere-wrapper'));
     const newRects = newWrappers.map(w => w.getBoundingClientRect());
 
@@ -667,23 +741,37 @@ function shuffleDeck() {
         // Som de "clique" sincronizado com o início de cada ghost
         setTimeout(() => SoundManager.playRandom('balls'), delay);
 
-        animateFLIPGhost(char, startRect, endRect, {
+        const ghostId = `deck_${newIdx}`;
+        const oldGhostId = `deck_${oldIdx}`;
+        let providedGhost = null;
+
+        if (capturedGhosts.has(oldGhostId)) {
+            providedGhost = capturedGhosts.get(oldGhostId).ghost;
+            capturedGhosts.delete(oldGhostId); // marca como usado
+        }
+
+        animateFLIPGhost(ghostId, char, startRect, endRect, {
             duration: GHOST_DURATION,
             delay: delay,
             arcY,
+            providedGhost: providedGhost,
             onDone: () => {
                 SoundManager.playRandom('tap');
-                const s = newSpheres[newIdx];
-                if (s) {
-                    s.style.opacity = '1';
+                gameState.hiddenDeckSlots.delete(newIdx);
+                const freshSphere = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${newIdx}'] .deck-letter`);
+                if (freshSphere) {
+                    freshSphere.style.opacity = '1';
                     requestAnimationFrame(() => {
-                        s.style.transition = '';
-                        s.style.opacity = '';
+                        freshSphere.style.transition = '';
+                        freshSphere.style.opacity = '';
                     });
                 }
             }
         });
     });
+
+    // Limpa fantasmas residuais que não foram reaproveitados (prevenção de lixo na tela)
+    capturedGhosts.forEach(record => record.ghost.remove());
 }
 
 function returnAllLettersWithAnimation() {
@@ -691,11 +779,12 @@ function returnAllLettersWithAnimation() {
     if (validItems.length === 0) return;
 
     gameState.inputLetters = [];
-    renderInput();
 
     // Oculta as letras destino no deck que estão voltando
-    const hiddenIndices = validItems.map(item => item.deckIndex);
-    renderDeck(hiddenIndices);
+    validItems.forEach(item => gameState.hiddenDeckSlots.add(item.deckIndex));
+
+    renderInput();
+    renderDeck();
 
     const inputWrappers = Array.from(ui.inputArea.querySelectorAll('.sphere-wrapper'));
     const allInputRects = inputWrappers.map(w => w.getBoundingClientRect());
@@ -708,14 +797,18 @@ function returnAllLettersWithAnimation() {
         if (destWrapper) {
             const destRect = destWrapper.getBoundingClientRect();
             const destSphere = destWrapper.querySelector('.deck-letter');
+            const ghostId = `deck_${item.deckIndex}`;
 
-            animateFLIPGhost(item.char, startRect, destRect, {
+            animateFLIPGhost(ghostId, item.char, startRect, destRect, {
                 onDone: () => {
-                    if (destSphere) {
-                        destSphere.style.opacity = '1';
+                    SoundManager.playRandom('tap');
+                    gameState.hiddenDeckSlots.delete(item.deckIndex);
+                    const freshSphere = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${item.deckIndex}'] .deck-letter`);
+                    if (freshSphere) {
+                        freshSphere.style.opacity = '1';
                         requestAnimationFrame(() => {
-                            destSphere.style.transition = '';
-                            destSphere.style.opacity = '';
+                            freshSphere.style.transition = '';
+                            freshSphere.style.opacity = '';
                         });
                     }
                 }
@@ -944,6 +1037,7 @@ let lastShakeTime = 0;
 let lastX = null, lastY = null, lastZ = null;
 
 function handleMotion(event) {
+    if (!userSettings.shake) return;
     // Só funciona no meio do jogo
     if (ui.gameScreen.classList.contains('hidden') || !ui.modal.classList.contains('hidden')) return;
 
@@ -1001,6 +1095,42 @@ ui.playBtn.addEventListener('click', () => {
 ui.rulesBtn.addEventListener('click', showRules);
 ui.backBtn.addEventListener('click', backToMenu);
 ui.closeRulesBtn.addEventListener('click', () => ui.rulesModal.classList.add('hidden'));
+
+// Modal de Configurações
+const settingsBtn = document.getElementById('settings-btn');
+const settingsModal = document.getElementById('settings-modal');
+const closeSettingsBtn = document.getElementById('close-settings-btn');
+const versionBtn = document.getElementById('version-btn');
+const changelogContent = document.getElementById('changelog-content');
+const settingSound = document.getElementById('setting-sound');
+const settingShake = document.getElementById('setting-shake');
+
+// Iniciar valores dos switches
+if (settingSound) settingSound.checked = userSettings.sound;
+if (settingShake) settingShake.checked = userSettings.shake;
+
+if (settingsBtn) settingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
+
+if (versionBtn) {
+    versionBtn.addEventListener('click', () => {
+        changelogContent.classList.toggle('hidden');
+    });
+}
+
+if (settingSound) {
+    settingSound.addEventListener('change', (e) => {
+        userSettings.sound = e.target.checked;
+        localStorage.setItem('letrox_settings', JSON.stringify(userSettings));
+    });
+}
+
+if (settingShake) {
+    settingShake.addEventListener('change', (e) => {
+        userSettings.shake = e.target.checked;
+        localStorage.setItem('letrox_settings', JSON.stringify(userSettings));
+    });
+}
 
 // Botão Cancelar do modal de saída
 ui.quitCancelBtn.addEventListener('click', () => {
