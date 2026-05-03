@@ -389,7 +389,7 @@ function renderBoard() {
     let bestSlotSize = Math.min(maxByH, maxByW);
 
     // Garante mínimo de 12px e máximo estético de 36px
-    bestSlotSize = Math.min(36, Math.max(12, bestSlotSize));
+    bestSlotSize = Math.min(36, Math.max(16.5, bestSlotSize));
 
     document.documentElement.style.setProperty('--slot-size', `${bestSlotSize}px`);
     document.documentElement.style.setProperty('--slot-font', `${Math.round(bestSlotSize * 0.65)}px`);
@@ -563,7 +563,7 @@ function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
         const oldBaseHeight = parseFloat(ghost.style.height);
         if (oldBaseWidth) normalStartScaleX = oldBaseWidth / baseWidth;
         if (oldBaseHeight) normalStartScaleY = oldBaseHeight / baseHeight;
-        
+
         normalStartScaleX = Math.min(1.2, Math.max(0.8, normalStartScaleX));
         normalStartScaleY = Math.min(1.2, Math.max(0.8, normalStartScaleY));
     }
