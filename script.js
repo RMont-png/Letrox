@@ -17,7 +17,8 @@ const activeGhosts = new Map();
 // Configurações do Usuário (salvas no localStorage)
 const userSettings = JSON.parse(localStorage.getItem('letrox_settings')) || {
     sound: true,
-    shake: true
+    shake: true,
+    vibration: true
 };
 
 const gameState = {
@@ -81,6 +82,16 @@ const SoundManager = {
         'tap 3.mp3': 0.1,
         'tap 4.mp3': 0.2
     },
+    vibrations: {
+        'acerto': [30, 100],
+        'erro': [20, 40, 20, 40, 20, 40, 20], // 4 taps rápidos
+        'repetida': [100, 80, 80, 70, 60, 60, 40, 50, 20],
+        'palavra mestra': [100, 50, 100, 50, 200],
+        'completo': [50, 50, 50, 50, 50, 300],
+        // 'poder 01' e 'poder 02' sem vibração: cada letra revelada vibra individualmente
+        'click': [10, 10],
+        'tap': 8 // Vibração rápida no tap das letras
+    },
     _cache: {},
     preload() {
         for (const [name, src] of Object.entries(this.singles)) {
@@ -102,10 +113,23 @@ const SoundManager = {
         if (!a) return;
         const clone = a.cloneNode();
 
-        // Aplica o volume configurado ou o padrão (0.5)
         clone.volume = this.volumes[name] !== undefined ? this.volumes[name] : 0.5;
 
         clone.play().catch(() => { });
+
+        // VIBRAÇÃO
+        if (userSettings.vibration && this.vibrations[name]) {
+            // Sons de resultado ganham um pequeno delay para não serem cancelados 
+            // pela vibração de clique (click) que acontece quase simultaneamente
+            const resultSounds = ['acerto', 'erro', 'repetida', 'palavra mestra', 'completo'];
+            if (resultSounds.includes(name)) {
+                setTimeout(() => {
+                    if (userSettings.vibration) navigator.vibrate(this.vibrations[name]);
+                }, 50);
+            } else {
+                navigator.vibrate(this.vibrations[name]);
+            }
+        }
     },
     playRandom(group) {
         if (!userSettings.sound) return;
@@ -121,6 +145,14 @@ const SoundManager = {
         clone.volume = this.volumes[filename] !== undefined ? this.volumes[filename] : 0.5;
 
         clone.play().catch(() => { });
+
+        // VIBRAÇÃO
+        if (userSettings.vibration && this.vibrations[group]) {
+            // Pequeno delay de 30ms para sincronizar a sensação tátil com o início real do áudio
+            setTimeout(() => {
+                if (userSettings.vibration) navigator.vibrate(this.vibrations[group]);
+            }, 30);
+        }
     }
 };
 SoundManager.preload();
@@ -744,6 +776,11 @@ function shuffleDeck() {
     });
     capturedGhosts.forEach((_, id) => activeGhosts.delete(id));
 
+    // Limpa os slots escondidos — o shuffle reconstrói o hiddenDeckSlots abaixo,
+    // e o hiddenInputSlots precisa ser zerado para que renderInput() mostre as letras
+    gameState.hiddenInputSlots.clear();
+    gameState.hiddenDeckSlots.clear();
+
     // 2. Cria uma permutação de índices e embaralha
     const perm = oldChars.map((_, i) => i);
     const unaccentedMaster = removeAccents(gameState.currentMasterWord);
@@ -766,9 +803,15 @@ function shuffleDeck() {
         }
     });
 
-    // Adiciona todos os índices ao hiddenDeckSlots para a animação de shuffle
-    gameState.deckLetters.forEach((_, i) => gameState.hiddenDeckSlots.add(i));
-    renderDeck(true); // hideAll = true
+    // Adiciona todos os índices do deck ao hiddenDeckSlots para a animação de shuffle
+    // (apenas os que NÃO estão no input — os usados não serão animados)
+    gameState.deckLetters.forEach((_, i) => {
+        const isUsed = gameState.inputLetters.some(item => item && item.deckIndex === i);
+        if (!isUsed) gameState.hiddenDeckSlots.add(i);
+    });
+    renderDeck(false); // hideAll = false: ocultamos seletivamente acima
+    renderInput();     // garante que as letras do input continuem visíveis
+
 
     // 5. Captura as referências das esferas e as NOVAS posições dos wrappers
     const GHOST_DURATION = 1000;
@@ -822,7 +865,7 @@ function shuffleDeck() {
     capturedGhosts.forEach(record => record.ghost.remove());
 }
 
-function returnAllLettersWithAnimation() {
+function returnAllLettersWithAnimation(vibrate = true) {
     const validItems = gameState.inputLetters.map((item, i) => item ? { ...item, inputIdx: i } : null).filter(Boolean);
     if (validItems.length === 0) return;
 
@@ -837,19 +880,23 @@ function returnAllLettersWithAnimation() {
     const inputWrappers = Array.from(ui.inputArea.querySelectorAll('.sphere-wrapper'));
     const allInputRects = inputWrappers.map(w => w.getBoundingClientRect());
 
-    validItems.forEach((item) => {
+    validItems.forEach((item, index) => {
         const startRect = allInputRects[item.inputIdx];
         if (!startRect) return;
 
         const destWrapper = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${item.deckIndex}']`);
         if (destWrapper) {
             const destRect = destWrapper.getBoundingClientRect();
-            const destSphere = destWrapper.querySelector('.deck-letter');
             const ghostId = `deck_${item.deckIndex}`;
 
             animateFLIPGhost(ghostId, item.char, startRect, destRect, {
-                playTapSound: true,
+                playTapSound: vibrate,
                 onDone: () => {
+                    // Vibração escalonada: cada letra tem um delay de 60ms para não
+                    // se cancelarem mutuamente quando várias voltam ao mesmo tempo
+                    if (vibrate && userSettings.vibration) {
+                        setTimeout(() => navigator.vibrate(8), index * 60);
+                    }
                     gameState.hiddenDeckSlots.delete(item.deckIndex);
                     const freshSphere = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${item.deckIndex}'] .deck-letter`);
                     if (freshSphere) {
@@ -879,8 +926,8 @@ function submitWord() {
             SoundManager.play('repetida');
             showFeedback(ui.inputArea, 'shake');
             showToast('Você já encontrou<br>essa palavra kkk', 'emoji_kkk.png');
-            // Retorna ao deck após o feedback com animação (agora sem atraso, atendendo ao pedido)
-            returnAllLettersWithAnimation();
+            // Retorna ao deck após o feedback com animação
+            returnAllLettersWithAnimation(false);
         } else {
             wordObj.found = true;
             let playedMasterSound = false;
@@ -899,7 +946,7 @@ function submitWord() {
             showFeedback(ui.inputArea, 'success-bg');
 
             // Limpa o input imediatamente com animação para processar o acerto
-            returnAllLettersWithAnimation();
+            returnAllLettersWithAnimation(false);
 
             // ... restante da lógica de acerto (board, master word, etc)
             renderBoard();
@@ -959,7 +1006,7 @@ function submitWord() {
         SoundManager.play('erro');
         showFeedback(ui.inputArea, 'error-bg');
         showFeedback(ui.inputArea, 'shake');
-        returnAllLettersWithAnimation();
+        returnAllLettersWithAnimation(false);
     }
 }
 
@@ -1147,10 +1194,12 @@ const versionBtn = document.getElementById('version-btn');
 const changelogContent = document.getElementById('changelog-content');
 const settingSound = document.getElementById('setting-sound');
 const settingShake = document.getElementById('setting-shake');
+const settingVibration = document.getElementById('setting-vibration');
 
 // Iniciar valores dos switches
 if (settingSound) settingSound.checked = userSettings.sound;
 if (settingShake) settingShake.checked = userSettings.shake;
+if (settingVibration) settingVibration.checked = userSettings.vibration;
 
 if (settingsBtn) settingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
 if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
@@ -1171,6 +1220,13 @@ if (settingSound) {
 if (settingShake) {
     settingShake.addEventListener('change', (e) => {
         userSettings.shake = e.target.checked;
+        localStorage.setItem('letrox_settings', JSON.stringify(userSettings));
+    });
+}
+
+if (settingVibration) {
+    settingVibration.addEventListener('change', (e) => {
+        userSettings.vibration = e.target.checked;
         localStorage.setItem('letrox_settings', JSON.stringify(userSettings));
     });
 }
@@ -1238,6 +1294,7 @@ ui.powerFirstLetter.addEventListener('click', () => {
                         setTimeout(() => {
                             slot.textContent = wordObj.word[0];
                             slot.classList.add('hint-revealed', 'flip-reveal');
+                            if (userSettings.vibration) navigator.vibrate(12);
                             slot.addEventListener('animationend', () => slot.classList.remove('flip-reveal'), { once: true });
                         }, delayCounter * 80);
                         delayCounter++;
@@ -1273,6 +1330,7 @@ ui.powerRandomLetter.addEventListener('click', () => {
                         setTimeout(() => {
                             slot.textContent = wordObj.word[randomIdx];
                             slot.classList.add('hint-revealed', 'flip-reveal');
+                            if (userSettings.vibration) navigator.vibrate(12);
                             slot.addEventListener('animationend', () => slot.classList.remove('flip-reveal'), { once: true });
                         }, delayCounter * 80);
                         delayCounter++;
