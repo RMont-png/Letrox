@@ -17,7 +17,8 @@ const activeGhosts = new Map();
 // Configurações do Usuário (salvas no localStorage)
 const userSettings = JSON.parse(localStorage.getItem('letrox_settings')) || {
     sound: true,
-    shake: true
+    shake: true,
+    vibration: true
 };
 
 const gameState = {
@@ -124,6 +125,26 @@ const SoundManager = {
     }
 };
 SoundManager.preload();
+
+// ── HapticManager ────────────────────────────────────────────────────────
+const HapticManager = {
+    // Padrões de vibração para cada tipo de interação
+    patterns: {
+        tap:        [8],           // Toque leve em letra (praticamente imperceptível)
+        shuffle:    [12],          // Clique no botão embaralhar
+        acerto:     [15, 40, 25],  // Dois pulsos suaves: palavra encontrada
+        erro:       [80, 40, 80],  // Dois trancos: palavra errada
+        repetida:   [60, 30, 60],  // Padrão de aviso: palavra já encontrada
+        mestra:     [20, 30, 60, 30, 120], // Pulso crescente: palavra mestra!
+        completo:   [30, 20, 50, 20, 80, 20, 150], // Celebração: nível completo
+        poder:      [15, 25, 40], // Poder ativado
+    },
+    vibrate(pattern) {
+        if (!userSettings.vibration) return;
+        if (!('vibrate' in navigator)) return;
+        navigator.vibrate(pattern);
+    }
+};
 
 // ── ImageManager ─────────────────────────────────────────────────────────
 const ImageManager = {
@@ -637,6 +658,7 @@ function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
 // Interações
 function moveFromDeckToInput(deckIndex, char) {
     SoundManager.playRandom('balls');
+    HapticManager.vibrate(HapticManager.patterns.tap);
     const deckWrapper = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${deckIndex}']`);
     const startRect = deckWrapper ? deckWrapper.getBoundingClientRect() : null;
 
@@ -682,6 +704,7 @@ function moveFromDeckToInput(deckIndex, char) {
 
 function moveFromInputToDeck(inputIndex) {
     SoundManager.playRandom('balls');
+    HapticManager.vibrate(HapticManager.patterns.tap);
     const inputWrapper = ui.inputArea.querySelector(`.sphere-wrapper[data-input-slot='${inputIndex}']`);
     const startRect = inputWrapper ? inputWrapper.getBoundingClientRect() : null;
     const item = gameState.inputLetters[inputIndex];
@@ -877,6 +900,7 @@ function submitWord() {
     if (wordObj) {
         if (wordObj.found) {
             SoundManager.play('repetida');
+            HapticManager.vibrate(HapticManager.patterns.repetida);
             showFeedback(ui.inputArea, 'shake');
             showToast('Você já encontrou<br>essa palavra kkk', 'emoji_kkk.png');
             // Retorna ao deck após o feedback com animação (agora sem atraso, atendendo ao pedido)
@@ -888,12 +912,15 @@ function submitWord() {
 
             if (levelFinished) {
                 SoundManager.play('completo');
+                HapticManager.vibrate(HapticManager.patterns.completo);
             } else if (wordObj.isMaster && !gameState.masterSoundPlayed) {
                 gameState.masterSoundPlayed = true;
                 playedMasterSound = true;
                 SoundManager.play('palavra mestra');
+                HapticManager.vibrate(HapticManager.patterns.mestra);
             } else {
                 SoundManager.play('acerto');
+                HapticManager.vibrate(HapticManager.patterns.acerto);
             }
             addScore(wordObj.length);
             showFeedback(ui.inputArea, 'success-bg');
@@ -957,6 +984,7 @@ function submitWord() {
     } else {
         // Erro: Palavra não existe
         SoundManager.play('erro');
+        HapticManager.vibrate(HapticManager.patterns.erro);
         showFeedback(ui.inputArea, 'error-bg');
         showFeedback(ui.inputArea, 'shake');
 
@@ -1148,10 +1176,12 @@ const versionBtn = document.getElementById('version-btn');
 const changelogContent = document.getElementById('changelog-content');
 const settingSound = document.getElementById('setting-sound');
 const settingShake = document.getElementById('setting-shake');
+const settingVibration = document.getElementById('setting-vibration');
 
 // Iniciar valores dos switches
 if (settingSound) settingSound.checked = userSettings.sound;
 if (settingShake) settingShake.checked = userSettings.shake;
+if (settingVibration) settingVibration.checked = userSettings.vibration ?? true;
 
 if (settingsBtn) settingsBtn.addEventListener('click', () => settingsModal.classList.remove('hidden'));
 if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => settingsModal.classList.add('hidden'));
@@ -1172,6 +1202,13 @@ if (settingSound) {
 if (settingShake) {
     settingShake.addEventListener('change', (e) => {
         userSettings.shake = e.target.checked;
+        localStorage.setItem('letrox_settings', JSON.stringify(userSettings));
+    });
+}
+
+if (settingVibration) {
+    settingVibration.addEventListener('change', (e) => {
+        userSettings.vibration = e.target.checked;
         localStorage.setItem('letrox_settings', JSON.stringify(userSettings));
     });
 }
