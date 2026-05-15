@@ -90,7 +90,7 @@ const SoundManager = {
         'completo': [50, 50, 50, 50, 50, 300],
         // 'poder 01' e 'poder 02' sem vibração: cada letra revelada vibra individualmente
         'click': [10, 10],
-        'tap': 8 // Vibração rápida no tap das letras
+        // 'tap': 8 // Vibração rápida no tap das letras
     },
     _cache: {},
     preload() {
@@ -894,9 +894,11 @@ function returnAllLettersWithAnimation(vibrate = true) {
                 onDone: () => {
                     // Vibração escalonada: cada letra tem um delay de 60ms para não
                     // se cancelarem mutuamente quando várias voltam ao mesmo tempo
+                    /*
                     if (vibrate && userSettings.vibration) {
                         setTimeout(() => navigator.vibrate(8), index * 60);
                     }
+                    */
                     gameState.hiddenDeckSlots.delete(item.deckIndex);
                     const freshSphere = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${item.deckIndex}'] .deck-letter`);
                     if (freshSphere) {
