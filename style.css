@@ -350,7 +350,7 @@ header {
     align-items: center;
     font-size: var(--slot-font, 0.7rem);
     /* Tamanho original restaurado */
-    font-weight: 700;
+    font-weight: 900;
     text-transform: uppercase;
     transition: all 0.3s ease;
 }
