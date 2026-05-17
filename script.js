@@ -115,7 +115,19 @@ const SoundManager = {
 
         clone.volume = this.volumes[name] !== undefined ? this.volumes[name] : 0.5;
 
-        clone.play().catch(() => { });
+        const cleanup = () => {
+            clone.pause();
+            clone.src = '';
+            clone.load();
+            clone.removeEventListener('ended', cleanup);
+            clone.removeEventListener('error', cleanup);
+        };
+        clone.addEventListener('ended', cleanup);
+        clone.addEventListener('error', cleanup);
+
+        clone.play().catch(() => { 
+            cleanup();
+        });
 
         // VIBRAÇÃO
         if (userSettings.vibration && this.vibrations[name]) {
@@ -144,7 +156,19 @@ const SoundManager = {
         // Aplica o volume configurado ou o padrão (0.5)
         clone.volume = this.volumes[filename] !== undefined ? this.volumes[filename] : 0.5;
 
-        clone.play().catch(() => { });
+        const cleanup = () => {
+            clone.pause();
+            clone.src = '';
+            clone.load();
+            clone.removeEventListener('ended', cleanup);
+            clone.removeEventListener('error', cleanup);
+        };
+        clone.addEventListener('ended', cleanup);
+        clone.addEventListener('error', cleanup);
+
+        clone.play().catch(() => { 
+            cleanup();
+        });
 
         // VIBRAÇÃO
         if (userSettings.vibration && this.vibrations[group]) {
@@ -322,7 +346,7 @@ function loadLevel() {
 
     // Filtra palavras que geram uma quantidade equilibrada de anagramas (min 8, max 45)
     const wordCount = gameState.validWordsForLevel.length;
-    if (wordCount < 8 || wordCount > 54) {
+    if (wordCount < 8 || wordCount > 45) {
         return loadLevel(); // re-roll
     }
 
@@ -416,16 +440,34 @@ function renderBoard() {
 
     const itemGapV = 8; // gap entre linhas dentro da coluna
     const itemGapH = 6;  // gap entre letras dentro de uma linha
-    const colGap = 12; // gap entre colunas
+    const colGap = 14; // gap entre colunas
 
-    // Define o layout fixo: 15 palavras por coluna no máximo
-    const MAX_PER_COL = 18;
+    // Ajusta o máximo de palavras por coluna de forma inteligente baseada no total de palavras da fase
+    let MAX_PER_COL = 15;
+    if (totalWords >= 30 && totalWords <= 36) {
+        MAX_PER_COL = 18;
+    }
     const bestNumCols = Math.ceil(totalWords / MAX_PER_COL);
     const maxWordsInAnyCol = Math.min(MAX_PER_COL, totalWords);
 
-    // Calcula o tamanho da letra baseado na grade fixa
-    const columnWidth = (availableW - (bestNumCols - 1) * colGap) / bestNumCols;
-    const maxByW = Math.floor((columnWidth + itemGapH) / maxWordLen - itemGapH);
+    // Calcula o tamanho da letra baseado no comprimento real das palavras de cada coluna
+    const colMaxLens = Array(bestNumCols).fill(0);
+    gameState.validWordsForLevel.forEach((item, index) => {
+        const colIdx = Math.floor(index / MAX_PER_COL);
+        if (colIdx < bestNumCols) {
+            colMaxLens[colIdx] = Math.max(colMaxLens[colIdx], item.length);
+        }
+    });
+
+    let sumMaxLens = 0;
+    let sumMaxLensMinusOne = 0;
+    colMaxLens.forEach(len => {
+        sumMaxLens += len;
+        sumMaxLensMinusOne += Math.max(0, len - 1);
+    });
+
+    const totalGapW = sumMaxLensMinusOne * itemGapH + (bestNumCols - 1) * colGap;
+    const maxByW = Math.floor((availableW - totalGapW) / sumMaxLens);
     const maxByH = Math.floor((availableH + itemGapV) / maxWordsInAnyCol - itemGapV);
 
     let bestSlotSize = Math.min(maxByH, maxByW);
@@ -467,7 +509,7 @@ function renderBoard() {
                 slot.textContent = item.word[i];
                 if (item.found) {
                     slot.classList.add('filled');
-                    if (item.isMaster) slot.classList.add('master');
+                    if (item.isActualMaster) slot.classList.add('master');
                 } else if (item.revealed) {
                     slot.classList.add('revealed');
                 }
@@ -638,20 +680,25 @@ function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
     const shake2X = (Math.random() - 0.5) * 3;
     const shake2Y = (Math.random() - 0.5) * 3;
 
+    // Rotação orgânica: Decide uma direção aleatória e gira exatamente 2 voltas completas (720 graus)
+    // Usamos múltiplos de 360 para que a bolinha termine exatamente na posição reta (0 graus)
+    const spinDirection = Math.random() > 0.5 ? 1 : -1;
+    const totalSpin = spinDirection * 720;
+
     const keyframes = arcY !== 0
         ? [
-            { transform: `translate(0,0) scale(${initScale})`, opacity: 1, offset: 0 },
-            { transform: `translate(${dx * 0.5}px, ${dy * 0.5 + arcY}px) scale(${midScale})`, opacity: 1, offset: 0.5 },
-            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(1)`, opacity: 1, offset: 0.92 },
-            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(1)`, opacity: 1, offset: 0.97 },
-            { transform: `translate(${dx}px, ${dy}px) scale(1)`, opacity: 1, offset: 1 }
+            { transform: `translate(0,0) scale(${initScale}) rotate(0deg)`, opacity: 1, offset: 0 },
+            { transform: `translate(${dx * 0.5}px, ${dy * 0.5 + arcY}px) scale(${midScale}) rotate(${totalSpin * 0.5}deg)`, opacity: 1, offset: 0.5 },
+            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(1) rotate(${totalSpin}deg)`, opacity: 1, offset: 0.92 },
+            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(1) rotate(${totalSpin}deg)`, opacity: 1, offset: 0.97 },
+            { transform: `translate(${dx}px, ${dy}px) scale(1) rotate(${totalSpin}deg)`, opacity: 1, offset: 1 }
         ]
         : [
-            { transform: `translate(0,0) scale(${initScale})`, opacity: 1, offset: 0 },
-            { transform: `translate(${dx * 0.5}px, ${dy * 0.5}px) scale(${midScale})`, opacity: 1, offset: 0.5 },
-            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(1)`, opacity: 1, offset: 0.92 },
-            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(1)`, opacity: 1, offset: 0.97 },
-            { transform: `translate(${dx}px, ${dy}px) scale(1)`, opacity: 1, offset: 1 }
+            { transform: `translate(0,0) scale(${initScale}) rotate(0deg)`, opacity: 1, offset: 0 },
+            { transform: `translate(${dx * 0.5}px, ${dy * 0.5}px) scale(${midScale}) rotate(${totalSpin * 0.5}deg)`, opacity: 1, offset: 0.5 },
+            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(1) rotate(${totalSpin}deg)`, opacity: 1, offset: 0.92 },
+            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(1) rotate(${totalSpin}deg)`, opacity: 1, offset: 0.97 },
+            { transform: `translate(${dx}px, ${dy}px) scale(1) rotate(${totalSpin}deg)`, opacity: 1, offset: 1 }
         ];
 
     const anim = ghost.animate(keyframes, {
@@ -960,12 +1007,21 @@ function submitWord() {
             returnAllLettersWithAnimation(false);
         } else {
             wordObj.found = true;
+
+            // Se for palavra de tamanho máximo e for a primeira encontrada
+            const isFirstMaster = wordObj.isMaster && !gameState.masterWordFound;
+            if (isFirstMaster) {
+                wordObj.isActualMaster = true;
+                gameState.masterWordFound = true;
+                setButtonDisabled(ui.nextLevelBtn, false);
+            }
+
             let playedMasterSound = false;
             let levelFinished = gameState.validWordsForLevel.every(w => w.found);
 
             if (levelFinished) {
                 SoundManager.play('completo');
-            } else if (wordObj.isMaster && !gameState.masterSoundPlayed) {
+            } else if (isFirstMaster && !gameState.masterSoundPlayed) {
                 gameState.masterSoundPlayed = true;
                 playedMasterSound = true;
                 SoundManager.play('palavra mestra');
@@ -995,10 +1051,7 @@ function submitWord() {
                 }
             });
 
-            if (wordObj.isMaster && !gameState.masterWordFound) {
-                gameState.masterWordFound = true;
-                setButtonDisabled(ui.nextLevelBtn, false);
-
+            if (isFirstMaster) {
                 setTimeout(() => {
                     // Sem screen-shake a pedido
 
@@ -1113,7 +1166,7 @@ function shuffleArray(array) {
  */
 function fireConfetti() {
     const count = 150;
-    const colors = ['#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#3b82f6'];
+    const colors = ['#f97316', '#facc15', '#38bdf8', '#ffffff'];
 
     for (let i = 0; i < count; i++) {
         const el = document.createElement('div');
@@ -1238,7 +1291,7 @@ if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => settingsM
 if (versionBtn) {
     versionBtn.addEventListener('click', () => {
         const isHidden = changelogContent.classList.toggle('hidden');
-        versionBtn.textContent = isHidden ? "Versão 0.6.0 ▼" : "Versão 0.6.0 ▲";
+        versionBtn.textContent = isHidden ? "Versão 0.6.1 ▼" : "Versão 0.6.1 ▲";
     });
 }
 

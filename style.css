@@ -307,7 +307,7 @@ header {
     flex-direction: row;
     justify-content: center;
     align-items: flex-start;
-    gap: clamp(8px, 3vw, 25px);
+    gap: clamp(10px, 3.5vw, 27px);
     height: 100%;
     width: 100%;
     overflow: hidden;
