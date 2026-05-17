@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;900&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -23,9 +23,12 @@
                     <p>Recorde: <span id="record-score">0</span> pts</p>
                 </div>
                 <div class="menu-controls">
-                    <button id="play-btn" class="primary-btn">▶ Jogar</button>
-                    <button id="settings-btn" class="secondary-btn">⚙️ Configurações</button>
-                    <button id="rules-btn" class="secondary-btn">📖 Como jogar</button>
+                    <button id="play-btn" class="primary-btn"><img src="icons Letrox/play.svg" class="btn-icon">
+                        Jogar</button>
+                    <button id="settings-btn" class="secondary-btn"><img src="icons Letrox/config.svg" class="btn-icon">
+                        Configurações</button>
+                    <button id="rules-btn" class="secondary-btn"><img src="icons Letrox/como jogar.svg"
+                            class="btn-icon"> Como jogar</button>
                 </div>
             </div>
         </div>
@@ -33,12 +36,15 @@
         <!-- Tela do Jogo -->
         <div id="game-screen" class="hidden">
             <header>
-                <button id="back-btn" class="nav-btn" aria-label="Voltar">⬅</button>
+                <button id="back-btn" class="nav-btn" aria-label="Voltar"><img src="icons Letrox/seta.svg"
+                        class="btn-icon"></button>
                 <div class="stats">
-                    <div class="level">🚩 <span id="level-display">1</span></div>
-                    <div class="score">⭐ <span id="score-display">0000</span></div>
+                    <div class="level"><img src="icons Letrox/fase.svg" class="stats-icon"> <span
+                            id="level-display">1</span></div>
+                    <div class="score"><img src="icons Letrox/estrela.svg" class="stats-icon"> <span
+                            id="score-display">0000</span></div>
                 </div>
-                <button id="next-level-btn" disabled>Próxima Fase</button>
+                <button id="next-level-btn" class="disabled">Próxima Fase</button>
             </header>
 
             <main id="board-container">
@@ -57,9 +63,11 @@
                 </div>
 
                 <div class="controls">
-                    <button id="hint-btn" aria-label="Poderes">⚡</button>
-                    <button id="submit-btn">Enviar</button>
-                    <button id="shuffle-btn" aria-label="Embaralhar">🔀</button>
+                    <button id="hint-btn" aria-label="Poderes"><img src="icons Letrox/raio.svg"
+                            class="btn-icon"></button>
+                    <button id="submit-btn">Enviar <img src="icons Letrox/enviar.svg" class="btn-icon"></button>
+                    <button id="shuffle-btn" aria-label="Embaralhar"><img src="icons Letrox/shuffle.svg"
+                            class="btn-icon"></button>
                 </div>
             </footer>
         </div>
@@ -77,22 +85,24 @@
     <!-- Modal de Poderes -->
     <div id="powers-modal" class="hidden">
         <div class="modal-content powers-content">
-            <h2>⚡ Poderes</h2>
-            <p style="font-size: 0.9rem; margin-bottom: 20px; color: var(--text-muted);">Use uma vez por partida</p>
+            <h2><img src="icons Letrox/raio.svg" class="title-icon" style="margin-right: 2px;">
+                Poderes</h2>
             <div class="powers-list">
                 <button id="power-first-letter" class="power-btn">
-                    <span class="power-icon">🅰️</span>
+                    <img src="icons Letrox/poder 1.svg" class="power-icon">
                     <div class="power-info">
                         <strong>Letra Inicial</strong>
-                        <span style="font-size: 0.8rem; font-weight: 400; opacity: 0.8;">Revela a 1ª letra de
+                        <span style="font-size: 0.8rem; font-weight: 500; color: var(--bg-color); opacity: 0.8;">Revela
+                            a 1ª letra de
                             tudo</span>
                     </div>
                 </button>
                 <button id="power-random-letter" class="power-btn">
-                    <span class="power-icon">🎲</span>
+                    <img src="icons Letrox/poder 2.svg" class="power-icon" style="width: 35px;">
                     <div class="power-info">
                         <strong>Letra Surpresa</strong>
-                        <span style="font-size: 0.8rem; font-weight: 400; opacity: 0.8;">Revela 1 letra aleatória</span>
+                        <span style="font-size: 0.8rem; font-weight: 500; color: var(--bg-color); opacity: 0.8;">Revela
+                            1 letra aleatória</span>
                     </div>
                 </button>
             </div>
@@ -103,25 +113,25 @@
     <!-- Modal de Regras -->
     <div id="rules-modal" class="hidden">
         <div class="modal-content rules-content">
-            <h2>📖 Como Jogar</h2>
+            <h2 style="color: var(--secondary);">Como Jogar</h2>
             <div class="rules-sections">
                 <div class="rules-section">
-                    <h3>🎯 Objetivo</h3>
+                    <h3>Objetivo</h3>
                     <p>Forme palavras usando as letras disponíveis no deck. O nível avança quando você descobre a
                         <strong>Palavra Mestra</strong> — aquela que usa <em>todas</em> as letras de uma vez.
                     </p>
                 </div>
                 <div class="rules-section">
-                    <h3>▶ Como jogar</h3>
+                    <h3>Como jogar</h3>
                     <ul>
                         <li>Toque nas letras do deck para formá-las no input</li>
                         <li>Toque em uma letra no input para devolvê-la ao deck</li>
                         <li>Clique em <strong>Enviar</strong> para tentar a palavra</li>
-                        <li>Use <strong>🔀 Embaralhar</strong> para reorganizar o deck</li>
+                        <li>Use <strong>Embaralhar</strong> para reorganizar o deck</li>
                     </ul>
                 </div>
-                <div class="rules-section">
-                    <h3>✅ Palavras aceitas</h3>
+                <div class="rules-section rules-yes">
+                    <h3>Palavras aceitas</h3>
                     <ul>
                         <li>Mínimo de 3 letras</li>
                         <li>Verbos no infinitivo, singular e plural</li>
@@ -129,7 +139,7 @@
                     </ul>
                 </div>
                 <div class="rules-section rules-no">
-                    <h3>❌ Não são aceitas</h3>
+                    <h3>Não são aceitas</h3>
                     <ul>
                         <li>Nomes próprios ou gírias</li>
                         <li>Palavras de baixo calão</li>
@@ -137,8 +147,8 @@
                         <li>Palavras já encontradas na rodada</li>
                     </ul>
                 </div>
-                <div class="rules-section">
-                    <h3>⚡ Poderes</h3>
+                <div class="rules-section rules-powers">
+                    <h3>Poderes</h3>
                     <p>Use <strong>Letra Inicial</strong> para revelar a 1ª letra de todas as palavras, ou <strong>Letra
                             Surpresa</strong> para uma letra aleatória. Cada poder é usado uma vez por rodada.</p>
                 </div>
@@ -154,8 +164,7 @@
             <p id="quit-modal-text">As palavras não encontradas serão reveladas.</p>
             <div style="display: flex; gap: 10px; margin-top: 8px;">
                 <button id="quit-cancel-btn" class="secondary-btn" style="flex: 1;">Continuar</button>
-                <button id="quit-confirm-btn" class="primary-btn"
-                    style="flex: 1; background: linear-gradient(135deg, #a855f7, #ec4899);">Terminar</button>
+                <button id="quit-confirm-btn" class="primary-btn" style="flex: 1;">Terminar</button>
             </div>
         </div>
     </div>
@@ -163,11 +172,13 @@
     <!-- Modal de Configurações -->
     <div id="settings-modal" class="hidden">
         <div class="modal-content settings-content">
-            <h2>⚙️ Configurações</h2>
+            <h2>Configurações</h2>
             <div class="settings-list" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
                 <label class="setting-item"
                     style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.35); padding: 16px 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer;">
-                    <span style="font-size: 1.1rem; color: var(--text-main); text-align: left;">🔊 Sons</span>
+                    <span
+                        style="font-size: 0.95rem; color: var(--text-main); text-align: left; display: flex; align-items: center; gap: 8px;"><img
+                            src="icons Letrox/som.svg" class="title-icon"> Sons</span>
                     <label class="switch" style="margin-left: 15px;">
                         <input type="checkbox" id="setting-sound" checked>
                         <span class="slider round"></span>
@@ -175,7 +186,9 @@
                 </label>
                 <label class="setting-item"
                     style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.35); padding: 16px 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer;">
-                    <span style="font-size: 1.1rem; color: var(--text-main); text-align: left;">📳 Shake to
+                    <span
+                        style="font-size: 0.95rem; color: var(--text-main); text-align: left; display: flex; align-items: center; gap: 8px;"><img
+                            src="icons Letrox/shake.svg" class="title-icon"> Shake to
                         Shuffle</span>
                     <label class="switch" style="margin-left: 15px;">
                         <input type="checkbox" id="setting-shake" checked>
@@ -184,8 +197,9 @@
                 </label>
                 <label class="setting-item"
                     style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.35); padding: 16px 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer;">
-                    <span style="font-size: 1.1rem; color: var(--text-main); text-align: left;">🫨 Feedback
-                        Háptico</span>
+                    <span
+                        style="font-size: 0.95rem; color: var(--text-main); text-align: left; display: flex; align-items: center; gap: 8px;"><img
+                            src="icons Letrox/vribração.svg" class="title-icon"> Vibrações</span>
                     <label class="switch" style="margin-left: 15px;">
                         <input type="checkbox" id="setting-vibration" checked>
                         <span class="slider round"></span>
@@ -196,59 +210,58 @@
             <div class="version-section"
                 style="margin-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
                 <button id="version-btn"
-                    style="background: none; border: none; color: var(--primary); font-size: 0.9rem; font-weight: bold; cursor: pointer; text-decoration: underline;">Versão
-                    0.5.1 ▼</button>
+                    style="background: none; border: none; color: var(--secondary); font-size: 0.9rem; font-weight: bold; cursor: pointer; text-decoration: underline;">Versão
+                    0.6.0 ▼</button>
                 <div id="changelog-content" class="changelog-content hidden"
-                    style="margin-top: 10px; background: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 8px; text-align: left; font-size: 0.85rem; color: var(--text-muted); max-height: 200px; overflow-y: auto;">
+                    style="margin-top: 10px; background: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 8px; text-align: left; font-size: 0.85rem; color: #FFFFFF; max-height: 200px; overflow-y: auto;">
 
                     <div style="margin-bottom: 15px;">
+
                         <p style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 5px; font-weight: bold;">
-                            -- VIBRA TUDO BRZZ! --</p>
+                            -- TAMO DE CARA NOVA! --</p>
                         <ul style="padding-left: 0; list-style-type: none;">
-                            <li style="margin-bottom: 4px;">1- Feedback Háptico: Implementação de vibração em botões,
-                                toques de letras e interações.</li>
-                            <li style="margin-bottom: 4px;">2- Padrões de Vibração: Novos efeitos táteis exclusivos para
-                                erros, acertos e palavras repetidas.</li>
-                            <li style="margin-bottom: 4px;">3- Melhoria nos Poderes: Agora, cada letra revelada pelos
-                                poderes possui sua própria vibração.</li>
-                            <li style="margin-bottom: 4px;">4- Correção de Bug: Resolvido o problema que ocultava as
-                                letras no input ao utilizar o Shuffle.</li>
-                            <li style="margin-bottom: 4px;">5- Dicionário Atualizado: Adição de novas palavras e
-                                revisões no vocabulário do jogo.</li>
+                            <li style="margin-bottom: 4px;">1- Nova identidade visual, cores, tipografia, ícones e muito
+                                mais!</li>
+                            <li style="margin-bottom: 4px;">2- Correção de bugs.</li>
+                            <li style="margin-bottom: 4px;">3- Adição de palavras ao dicionário do jogo.</li>
                         </ul>
                     </div>
 
                     <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                        <h3
-                            style="color: var(--primary); margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; opacity: 0.7;">
-                            Atualização: 0.4.0</h3>
+                        <h3 style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase;">
+                            Versão: 0.5.0</h3>
+                        <p
+                            style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 0; font-weight: bold; opacity: 0.7;">
+                            -- VIBRA TUDO BRZZ! --</p>
+                    </div>
+
+                    <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                        <h3 style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase;">
+                            Versão: 0.4.0</h3>
                         <p
                             style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 0; font-weight: bold; opacity: 0.7;">
                             -- CONFIGURAÇÕES! --</p>
                     </div>
 
                     <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                        <h3
-                            style="color: var(--primary); margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; opacity: 0.7;">
-                            Atualização: 0.3.0</h3>
+                        <h3 style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase;">
+                            Versão: 0.3.0</h3>
                         <p
                             style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 0; font-weight: bold; opacity: 0.7;">
                             -- SHAKE TO SHUFFLE! --</p>
                     </div>
 
                     <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                        <h3
-                            style="color: var(--primary); margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; opacity: 0.7;">
-                            Atualização: 0.2.0</h3>
+                        <h3 style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase;">
+                            Versão: 0.2.0</h3>
                         <p
                             style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 0; font-weight: bold; opacity: 0.7;">
                             -- SONS! --</p>
                     </div>
 
                     <div style="margin-bottom: 5px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                        <h3
-                            style="color: var(--primary); margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; opacity: 0.7;">
-                            Atualização: 0.1.0</h3>
+                        <h3 style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase;">
+                            Versão: 0.1.0</h3>
                         <p
                             style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 0; font-weight: bold; opacity: 0.7;">
                             -- PODERES! --</p>

@@ -206,6 +206,18 @@ const ui = {
     quitCancelBtn: document.getElementById('quit-cancel-btn')
 };
 
+function setButtonDisabled(btn, disabled) {
+    if (btn) {
+        if (disabled) {
+            btn.classList.add('disabled');
+        } else {
+            btn.classList.remove('disabled');
+        }
+        // Remove native disabled attribute to allow click events and click sound
+        btn.disabled = false;
+    }
+}
+
 // Inicialização
 async function initGame() {
     try {
@@ -256,7 +268,7 @@ function startGame() {
     gameState.score = 0;
     ui.menuScreen.classList.add('hidden');
     ui.gameScreen.classList.remove('hidden');
-    ui.backBtn.textContent = "⬅";
+    ui.backBtn.classList.remove('nav-btn-yellow');
     ui.scoreDisplay.textContent = "0000";
     loadLevel();
 }
@@ -273,8 +285,7 @@ function backToMenu() {
         updateMenuRecords();
         ui.gameScreen.classList.add('hidden');
         ui.menuScreen.classList.remove('hidden');
-        ui.backBtn.style.background = '';
-        ui.backBtn.textContent = '⬅';
+        ui.backBtn.classList.remove('nav-btn-yellow');
         return;
     }
 
@@ -311,7 +322,7 @@ function loadLevel() {
 
     // Filtra palavras que geram uma quantidade equilibrada de anagramas (min 8, max 45)
     const wordCount = gameState.validWordsForLevel.length;
-    if (wordCount < 8 || wordCount > 45) {
+    if (wordCount < 8 || wordCount > 54) {
         return loadLevel(); // re-roll
     }
 
@@ -328,7 +339,7 @@ function loadLevel() {
 
     // Atualiza a UI
     ui.levelDisplay.textContent = gameState.level;
-    ui.nextLevelBtn.disabled = true;
+    setButtonDisabled(ui.nextLevelBtn, true);
     disableFooter(false);
     renderBoard();
     renderInput();
@@ -398,30 +409,29 @@ function renderBoard() {
     const maxWordLen = gameState.currentMasterWord.length;
 
     const container = ui.wordsBoard.parentElement;
-    const containerPaddingV = 40; // 15px top + 15px bottom + 10px safety margin
-    const containerPaddingH = 30; // 15px left + 15px right
+    const containerPaddingV = 24; // 12px top + 12px bottom padding do tabuleiro
+    const containerPaddingH = 80; // 40px laterais do board-container + 40px laterais do words-board
     const availableH = Math.max(100, container.clientHeight - containerPaddingV);
     const availableW = Math.max(100, container.clientWidth - containerPaddingH);
 
-    const itemGapV = 4;  // gap entre linhas dentro da coluna
-    const itemGapH = 2;  // gap entre letras dentro de uma linha
+    const itemGapV = 8; // gap entre linhas dentro da coluna
+    const itemGapH = 6;  // gap entre letras dentro de uma linha
     const colGap = 12; // gap entre colunas
 
     // Define o layout fixo: 15 palavras por coluna no máximo
-    const MAX_PER_COL = 15;
+    const MAX_PER_COL = 18;
     const bestNumCols = Math.ceil(totalWords / MAX_PER_COL);
     const maxWordsInAnyCol = Math.min(MAX_PER_COL, totalWords);
 
     // Calcula o tamanho da letra baseado na grade fixa
-    const maxByW = Math.floor(
-        (availableW + itemGapH - (bestNumCols - 1) * colGap) / bestNumCols / maxWordLen - itemGapH
-    );
+    const columnWidth = (availableW - (bestNumCols - 1) * colGap) / bestNumCols;
+    const maxByW = Math.floor((columnWidth + itemGapH) / maxWordLen - itemGapH);
     const maxByH = Math.floor((availableH + itemGapV) / maxWordsInAnyCol - itemGapV);
 
     let bestSlotSize = Math.min(maxByH, maxByW);
 
-    // Garante mínimo de 12px e máximo estético de 36px
-    bestSlotSize = Math.min(36, Math.max(16.5, bestSlotSize));
+    // Garante mínimo de 11px (necessário para 3 colunas de 8 letras não vazarem a tela) e máximo de 40px
+    bestSlotSize = Math.min(40, Math.max(11, bestSlotSize));
 
     document.documentElement.style.setProperty('--slot-size', `${bestSlotSize}px`);
     document.documentElement.style.setProperty('--slot-font', `${Math.round(bestSlotSize * 0.65)}px`);
@@ -476,6 +486,12 @@ function renderInput() {
     ui.inputArea.innerHTML = '';
     const wordLen = gameState.deckLetters.length;
 
+    // Ajusta classe de tamanho dinamicamente (letters-3, letters-4, ..., letters-8)
+    ui.inputArea.classList.forEach(className => {
+        if (className.startsWith('letters-')) ui.inputArea.classList.remove(className);
+    });
+    ui.inputArea.classList.add(`letters-${wordLen}`);
+
     for (let i = 0; i < wordLen; i++) {
         const wrapper = document.createElement('div');
         wrapper.className = 'sphere-wrapper';
@@ -508,6 +524,14 @@ function renderInput() {
 
 function renderDeck(hideAll = false) {
     ui.deckArea.innerHTML = '';
+    const count = gameState.deckLetters.length;
+
+    // Ajusta classe de tamanho dinamicamente (letters-3, letters-4, ..., letters-8)
+    ui.deckArea.classList.forEach(className => {
+        if (className.startsWith('letters-')) ui.deckArea.classList.remove(className);
+    });
+    ui.deckArea.classList.add(`letters-${count}`);
+
     gameState.deckLetters.forEach((char, index) => {
         const isUsed = gameState.inputLetters.some(item => item && item.deckIndex === index);
 
@@ -575,29 +599,22 @@ function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
     const dx = cx2 - cx1;
     const dy = cy2 - cy1;
 
-    const baseWidth = Math.max(10, destRect.width);
-    const baseHeight = Math.max(10, destRect.height);
+    // Usa o menor lado do slot para garantir ghost circular, descontando a borda (4px cada lado = 8px total)
+    const baseSize = Math.max(10, Math.min(destRect.width, destRect.height) - 8);
+    const baseWidth = baseSize;
+    const baseHeight = baseSize;
 
-    let initScaleX = currentStartRect.width / baseWidth;
-    let initScaleY = currentStartRect.height / baseHeight;
+    // Usa um único fator de escala (uniforme) para evitar distorção oval
+    // Desconta a borda do StartRect para a escala bater 100% com o tamanho da bolinha
+    const sourceSize = Math.max(10, Math.min(currentStartRect.width, currentStartRect.height) - 8);
+    let initScale = Math.min(1.4, Math.max(0.4, sourceSize / baseSize));
 
-    // PREVENÇÃO DE BUG CRÍTICO: Trava a escala visual máxima para evitar crescimento infinito
-    // caso o navegador reporte tamanhos bizarros durante o spam de cliques.
-    initScaleX = Math.min(1.4, Math.max(0.4, initScaleX));
-    initScaleY = Math.min(1.4, Math.max(0.4, initScaleY));
-
-    let normalStartScaleX = initScaleX;
-    let normalStartScaleY = initScaleY;
+    let normalStartScale = initScale;
 
     // Extrai o tamanho base não-escalado da animação anterior (se houver)
     if (ghost.style && ghost.style.width) {
         const oldBaseWidth = parseFloat(ghost.style.width);
-        const oldBaseHeight = parseFloat(ghost.style.height);
-        if (oldBaseWidth) normalStartScaleX = oldBaseWidth / baseWidth;
-        if (oldBaseHeight) normalStartScaleY = oldBaseHeight / baseHeight;
-
-        normalStartScaleX = Math.min(1.2, Math.max(0.8, normalStartScaleX));
-        normalStartScaleY = Math.min(1.2, Math.max(0.8, normalStartScaleY));
+        if (oldBaseWidth) normalStartScale = Math.min(1.2, Math.max(0.8, oldBaseWidth / baseSize));
     }
 
     ghost.style.cssText = `
@@ -613,30 +630,28 @@ function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
     `;
 
     const scaleMultiplier = 1.3; // Cresce 30% no meio para dar efeito de salto
-    const midScaleX = ((normalStartScaleX + 1) / 2) * scaleMultiplier;
-    const midScaleY = ((normalStartScaleY + 1) / 2) * scaleMultiplier;
+    const midScale = ((normalStartScale + 1) / 2) * scaleMultiplier;
 
-    const shake1X = (Math.random() - 0.5) * 3; // Valores entre -3 e 3
-    const shake1Y = (Math.random() - 0.5) * 3;
+    // Tremidinha aleatória antes de encaixar (valores pequenos para ser sutil)
+    const shake1X = (Math.random() - 0.5) * 4;
+    const shake1Y = (Math.random() - 0.5) * 4;
     const shake2X = (Math.random() - 0.5) * 3;
     const shake2Y = (Math.random() - 0.5) * 3;
 
     const keyframes = arcY !== 0
         ? [
-            { transform: `translate(0,0) scale(${initScaleX}, ${initScaleY})`, opacity: 1, offset: 0 },
-            { transform: `translate(${dx * 0.5}px, ${dy * 0.5 + arcY}px) scale(${midScaleX}, ${midScaleY})`, opacity: 1, offset: 0.5 },
-            // Tremidinha aleatória mais rápida antes de encaixar
-            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(1, 1)`, opacity: 1, offset: 0.98 },
-            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(1, 1)`, opacity: 1, offset: 0.99 },
-            { transform: `translate(${dx}px, ${dy}px) scale(1, 1)`, opacity: 1, offset: 1 }
+            { transform: `translate(0,0) scale(${initScale})`, opacity: 1, offset: 0 },
+            { transform: `translate(${dx * 0.5}px, ${dy * 0.5 + arcY}px) scale(${midScale})`, opacity: 1, offset: 0.5 },
+            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(1)`, opacity: 1, offset: 0.92 },
+            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(1)`, opacity: 1, offset: 0.97 },
+            { transform: `translate(${dx}px, ${dy}px) scale(1)`, opacity: 1, offset: 1 }
         ]
         : [
-            { transform: `translate(0,0) scale(${initScaleX}, ${initScaleY})`, opacity: 1, offset: 0 },
-            { transform: `translate(${dx * 0.5}px, ${dy * 0.5}px) scale(${midScaleX}, ${midScaleY})`, opacity: 1, offset: 0.5 },
-            // Tremidinha aleatória mais rápida antes de encaixar
-            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(1, 1)`, opacity: 1, offset: 0.98 },
-            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(1, 1)`, opacity: 1, offset: 0.99 },
-            { transform: `translate(${dx}px, ${dy}px) scale(1, 1)`, opacity: 1, offset: 1 }
+            { transform: `translate(0,0) scale(${initScale})`, opacity: 1, offset: 0 },
+            { transform: `translate(${dx * 0.5}px, ${dy * 0.5}px) scale(${midScale})`, opacity: 1, offset: 0.5 },
+            { transform: `translate(${dx + shake1X}px, ${dy + shake1Y}px) scale(1)`, opacity: 1, offset: 0.92 },
+            { transform: `translate(${dx + shake2X}px, ${dy + shake2Y}px) scale(1)`, opacity: 1, offset: 0.97 },
+            { transform: `translate(${dx}px, ${dy}px) scale(1)`, opacity: 1, offset: 1 }
         ];
 
     const anim = ghost.animate(keyframes, {
@@ -753,6 +768,18 @@ function moveFromInputToDeck(inputIndex) {
 }
 
 function shuffleDeck() {
+    if (ui.shuffleBtn.classList.contains('disabled')) return;
+
+    // Anima o ícone girando 360 graus com efeito de mola
+    const shuffleIcon = ui.shuffleBtn.querySelector('.btn-icon');
+    if (shuffleIcon) {
+        shuffleIcon.classList.remove('spin-animation');
+        void shuffleIcon.offsetWidth; // Força reflow para reiniciar a animação
+        shuffleIcon.classList.add('spin-animation');
+        shuffleIcon.addEventListener('animationend', () => {
+            shuffleIcon.classList.remove('spin-animation');
+        }, { once: true });
+    }
     // 1. Captura posição EXATA de cada wrapper antes de mexer em nada
     const wrappers = Array.from(ui.deckArea.querySelectorAll('.sphere-wrapper'));
     // Se a letra já for um fantasma voando, pega a posição do fantasma
@@ -915,6 +942,7 @@ function returnAllLettersWithAnimation(vibrate = true) {
 }
 
 function submitWord() {
+    if (ui.submitBtn.classList.contains('disabled')) return;
     if (gameState.revealed) return;
     const validItems = gameState.inputLetters.filter(Boolean);
     if (validItems.length < 3) return;
@@ -969,7 +997,7 @@ function submitWord() {
 
             if (wordObj.isMaster && !gameState.masterWordFound) {
                 gameState.masterWordFound = true;
-                ui.nextLevelBtn.disabled = false;
+                setButtonDisabled(ui.nextLevelBtn, false);
 
                 setTimeout(() => {
                     // Sem screen-shake a pedido
@@ -1030,6 +1058,7 @@ function addScore(wordLength) {
 }
 
 function nextLevel() {
+    if (ui.nextLevelBtn.classList.contains('disabled')) return;
     closeModal();
 
     // Verifica se há palavras não encontradas
@@ -1040,7 +1069,7 @@ function nextLevel() {
         gameState.revealed = true;
         missedWords.forEach(w => w.revealed = true);
         renderBoard();
-        ui.nextLevelBtn.textContent = "Avançar →";
+        ui.nextLevelBtn.textContent = "Avançar";
         disableFooter(true);
         return;
     }
@@ -1066,9 +1095,9 @@ function closeModal() {
 }
 
 function disableFooter(disabled = true) {
-    ui.submitBtn.disabled = disabled;
-    ui.shuffleBtn.disabled = disabled;
-    ui.hintBtn.disabled = disabled;
+    setButtonDisabled(ui.submitBtn, disabled);
+    setButtonDisabled(ui.shuffleBtn, disabled);
+    setButtonDisabled(ui.hintBtn, disabled);
 }
 
 // Utils
@@ -1208,7 +1237,8 @@ if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => settingsM
 
 if (versionBtn) {
     versionBtn.addEventListener('click', () => {
-        changelogContent.classList.toggle('hidden');
+        const isHidden = changelogContent.classList.toggle('hidden');
+        versionBtn.textContent = isHidden ? "Versão 0.6.0 ▼" : "Versão 0.6.0 ▲";
     });
 }
 
@@ -1252,9 +1282,8 @@ ui.quitConfirmBtn.addEventListener('click', () => {
         gameState.revealed = true;
     }
 
-    // Botão de voltar fica rosa/roxo sinalizando que pode sair
-    ui.backBtn.style.background = 'linear-gradient(135deg, #a855f7, #ec4899)';
-    ui.backBtn.textContent = '⬅';
+    // Botão de voltar fica amarelo sinalizando que pode sair
+    ui.backBtn.classList.add('nav-btn-yellow');
     disableFooter(true);
 });
 
@@ -1269,14 +1298,16 @@ document.addEventListener('click', (e) => {
 
 // Poderes
 ui.hintBtn.addEventListener('click', () => {
-    ui.powerFirstLetter.disabled = gameState.power1Used;
-    ui.powerRandomLetter.disabled = gameState.power2Used;
+    if (ui.hintBtn.classList.contains('disabled')) return;
+    setButtonDisabled(ui.powerFirstLetter, gameState.power1Used);
+    setButtonDisabled(ui.powerRandomLetter, gameState.power2Used);
     ui.powersModal.classList.remove('hidden');
 });
 
 ui.closePowersBtn.addEventListener('click', () => ui.powersModal.classList.add('hidden'));
 
 ui.powerFirstLetter.addEventListener('click', () => {
+    if (ui.powerFirstLetter.classList.contains('disabled')) return;
     if (gameState.power1Used) return;
     gameState.power1Used = true;
     ui.powersModal.classList.add('hidden');
@@ -1308,6 +1339,7 @@ ui.powerFirstLetter.addEventListener('click', () => {
 });
 
 ui.powerRandomLetter.addEventListener('click', () => {
+    if (ui.powerRandomLetter.classList.contains('disabled')) return;
     if (gameState.power2Used) return;
     gameState.power2Used = true;
     ui.powersModal.classList.add('hidden');
