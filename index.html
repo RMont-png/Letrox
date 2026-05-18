@@ -19,8 +19,17 @@
             <div class="menu-content">
                 <h1 class="game-title">LETROX</h1>
                 <div class="records-box">
-                    <p>Maior Nível: <span id="record-level">1</span></p>
-                    <p>Recorde: <span id="record-score">0</span> pts</p>
+                    <div class="records-title">Recorde</div>
+                    <div class="records-values">
+                        <div class="record-item">
+                            <img src="icons Letrox/fase.svg" class="record-icon icon-orange">
+                            <span id="record-level">-</span>
+                        </div>
+                        <div class="record-item">
+                            <img src="icons Letrox/estrela.svg" class="record-icon icon-yellow">
+                            <span id="record-score">0000</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="menu-controls">
                     <button id="play-btn" class="primary-btn"><img src="icons Letrox/play.svg" class="btn-icon">
@@ -39,9 +48,9 @@
                 <button id="back-btn" class="nav-btn" aria-label="Voltar"><img src="icons Letrox/seta.svg"
                         class="btn-icon"></button>
                 <div class="stats">
-                    <div class="level"><img src="icons Letrox/fase.svg" class="stats-icon"> <span
+                    <div class="level"><img src="icons Letrox/fase.svg" class="stats-icon icon-orange"> <span
                             id="level-display">1</span></div>
-                    <div class="score"><img src="icons Letrox/estrela.svg" class="stats-icon"> <span
+                    <div class="score"><img src="icons Letrox/estrela.svg" class="stats-icon icon-yellow"> <span
                             id="score-display">0000</span></div>
                 </div>
                 <button id="next-level-btn" class="disabled">Próxima Fase</button>
@@ -92,7 +101,7 @@
                     <img src="icons Letrox/poder 1.svg" class="power-icon">
                     <div class="power-info">
                         <strong>Letra Inicial</strong>
-                        <span style="font-size: 0.8rem; font-weight: 500; color: var(--bg-color); opacity: 0.8;">Revela
+                        <span style="font-size: 0.8rem; font-weight: bold; color: var(--bg-color); opacity: 0.8;">Revela
                             a 1ª letra de
                             tudo</span>
                     </div>
@@ -101,7 +110,7 @@
                     <img src="icons Letrox/poder 2.svg" class="power-icon" style="width: 35px;">
                     <div class="power-info">
                         <strong>Letra Surpresa</strong>
-                        <span style="font-size: 0.8rem; font-weight: 500; color: var(--bg-color); opacity: 0.8;">Revela
+                        <span style="font-size: 0.8rem; font-weight: bold; color: var(--bg-color); opacity: 0.8;">Revela
                             1 letra aleatória</span>
                     </div>
                 </button>
@@ -211,7 +220,7 @@
                 style="margin-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
                 <button id="version-btn"
                     style="background: none; border: none; color: var(--secondary); font-size: 0.9rem; font-weight: bold; cursor: pointer; text-decoration: underline;">Versão
-                    0.6.1 ▼</button>
+                    0.6.2 ▼</button>
                 <div id="changelog-content" class="changelog-content hidden"
                     style="margin-top: 10px; background: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 8px; text-align: left; font-size: 0.85rem; color: #FFFFFF; max-height: 200px; overflow-y: auto;">
 
@@ -229,11 +238,15 @@
                             <li style="margin-bottom: 4px;">6- Os confetes agora seguem a paleta de cores do jogo.</li>
                             <li style="margin-bottom: 4px;">7- Corrigido o bug que o jogo ficava sem som depois de um
                                 tempo jogando.</li>
+                            <li style="margin-bottom: 4px;">8- Melhoria nos confetes.</li>
+                            <li style="margin-bottom: 4px;">9- Mudança no som da palavra mestra encontrada.</li>
+                            <li style="margin-bottom: 4px;">10- Correção do bug que fazia o recorde não começar zerado e melhoria visual no hud.</li>
                         </ul>
                     </div>
 
                     <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                        <h3 style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; font-weight: 500;">
+                        <h3
+                            style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; font-weight: 500;">
                             Versão: 0.5.0</h3>
                         <p
                             style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 0; font-weight: bold; opacity: 1;">
@@ -241,7 +254,8 @@
                     </div>
 
                     <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                        <h3 style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; font-weight: 500;">
+                        <h3
+                            style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; font-weight: 500;">
                             Versão: 0.4.0</h3>
                         <p
                             style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 0; font-weight: bold; opacity: 1;">
@@ -249,7 +263,8 @@
                     </div>
 
                     <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                        <h3 style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; font-weight: 500;">
+                        <h3
+                            style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; font-weight: 500;">
                             Versão: 0.3.0</h3>
                         <p
                             style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 0; font-weight: bold; opacity: 1;">
@@ -257,7 +272,8 @@
                     </div>
 
                     <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                        <h3 style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; font-weight: 500;">
+                        <h3
+                            style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; font-weight: 500;">
                             Versão: 0.2.0</h3>
                         <p
                             style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 0; font-weight: bold; opacity: 1;">
@@ -265,7 +281,8 @@
                     </div>
 
                     <div style="margin-bottom: 5px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                        <h3 style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; font-weight: 500;">
+                        <h3
+                            style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; font-weight: 500;">
                             Versão: 0.1.0</h3>
                         <p
                             style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 0; font-weight: bold; opacity: 1;">
@@ -277,6 +294,7 @@
             <button id="close-settings-btn" class="secondary-btn" style="margin-top: 15px; width: 100%;">Voltar</button>
         </div>
     </div>
+    <div id="confetti-container"></div>
 
     <script src="script.js"></script>
 </body>

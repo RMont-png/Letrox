@@ -48,7 +48,8 @@ const SoundManager = {
         'completo': 'sons/completo.mp3',
         'poder 01': 'sons/poder 01.mp3',
         'poder 02': 'sons/poder 02.mp3',
-        'click': 'sons/click.mp3'
+        'click': 'sons/click.mp3',
+        'confete': 'sons/confete.mp3'
     },
     groups: {
         balls: [
@@ -60,7 +61,7 @@ const SoundManager = {
     // Configuração central de volumes para facilitar o ajuste manual
     volumes: {
         // Efeitos únicos
-        'acerto': 0.5,
+        'acerto': 0.4,
         'erro': 0.5,
         'repetida': 0.4,
         'palavra mestra': 0.4,
@@ -68,6 +69,7 @@ const SoundManager = {
         'poder 01': 0.5,
         'poder 02': 0.5,
         'click': 0.5,
+        'confete': 0.06,
 
         // Efeitos de grupo (bolinhas)
         'balls 3.mp3': 0.2,
@@ -125,7 +127,7 @@ const SoundManager = {
         clone.addEventListener('ended', cleanup);
         clone.addEventListener('error', cleanup);
 
-        clone.play().catch(() => { 
+        clone.play().catch(() => {
             cleanup();
         });
 
@@ -166,7 +168,7 @@ const SoundManager = {
         clone.addEventListener('ended', cleanup);
         clone.addEventListener('error', cleanup);
 
-        clone.play().catch(() => { 
+        clone.play().catch(() => {
             cleanup();
         });
 
@@ -268,28 +270,36 @@ async function initGame() {
     }
 }
 
+// Placar da última partida jogada na sessão (reseta ao recarregar a página)
+let lastGameLevel = null;
+let lastGameScore = null;
+let hasPlayedThisSession = false;
+
 function updateMenuRecords() {
-    const recLevel = localStorage.getItem('letrox_max_level') || 1;
-    const recScore = localStorage.getItem('letrox_max_score') || 0;
-    ui.recordLevel.textContent = recLevel;
-    ui.recordScore.textContent = recScore;
+    if (lastGameLevel === null) {
+        ui.recordLevel.textContent = "-";
+        ui.recordScore.textContent = "0000";
+    } else {
+        ui.recordLevel.textContent = lastGameLevel;
+        ui.recordScore.textContent = lastGameScore.toString().padStart(4, '0');
+    }
 }
 
 function saveRecords() {
-    const currentMaxLevel = parseInt(localStorage.getItem('letrox_max_level') || 1);
-    const currentMaxScore = parseInt(localStorage.getItem('letrox_max_score') || 0);
-
-    if (gameState.level > currentMaxLevel) {
-        localStorage.setItem('letrox_max_level', gameState.level);
-    }
-    if (gameState.score > currentMaxScore) {
-        localStorage.setItem('letrox_max_score', gameState.score);
+    if (hasPlayedThisSession) {
+        if (lastGameLevel === null || gameState.level > lastGameLevel) {
+            lastGameLevel = gameState.level;
+        }
+        if (lastGameScore === null || gameState.score > lastGameScore) {
+            lastGameScore = gameState.score;
+        }
     }
 }
 
 function startGame() {
     gameState.level = 1;
     gameState.score = 0;
+    hasPlayedThisSession = true;
     ui.menuScreen.classList.add('hidden');
     ui.gameScreen.classList.remove('hidden');
     ui.backBtn.classList.remove('nav-btn-yellow');
@@ -1079,7 +1089,7 @@ function submitWord() {
                     fireConfetti();
 
                     setTimeout(() => {
-                        showModal("Nível Concluído!", "Parabéns! Você encontrou TODAS as palavras ocultas!", "Próximo Nível", nextLevel);
+                        showModal("Fase Concluída!", "Parabéns! Você encontrou TODAS as palavras ocultas!", "Próxima Fase", nextLevel);
                     }, 200);
                 }, 400);
             }
@@ -1128,7 +1138,7 @@ function nextLevel() {
     }
 
     // Avança de fato
-    ui.nextLevelBtn.textContent = "Próximo Nível";
+    ui.nextLevelBtn.textContent = "Próxima Fase";
     saveRecords();
     gameState.level++;
     loadLevel();
@@ -1165,45 +1175,93 @@ function shuffleArray(array) {
  * Dispara partículas de confete do centro da tela.
  */
 function fireConfetti() {
-    const count = 150;
-    const colors = ['#f97316', '#facc15', '#38bdf8', '#ffffff'];
+    SoundManager.play('confete');
 
-    for (let i = 0; i < count; i++) {
-        const el = document.createElement('div');
-        el.className = 'confetti-particle';
-        el.style.background = colors[Math.floor(Math.random() * colors.length)];
-        el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
-        document.body.appendChild(el);
+    // Atraso de 250ms para os confetes começarem a aparecer após o início do som
+    setTimeout(() => {
+        const count = 160;
+        const colors = [
+            '#facc15', '#facc15', '#facc15', // Amarelo (peso maior/50% da paleta)
+            '#f97316',                        // Laranja
+            '#38bdf8',                        // Azul claro
+            '#ffffff'                         // Branco
+        ];
 
-        // Explosão 360 graus a partir do centro (CSS já posiciona no top 50% left 50%)
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 200 + Math.random() * 600;
+        for (let i = 0; i < count; i++) {
+            const el = document.createElement('div');
+            el.className = 'confetti-particle';
+            el.style.background = colors[Math.floor(Math.random() * colors.length)];
+            el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
 
-        // Posição final baseada no ângulo e velocidade
-        const vx = Math.cos(angle) * speed * (window.innerWidth / 400); // Espalha mais se tela larga
-        const vy = Math.sin(angle) * speed; // Círculo completo
-        const rotate = Math.random() * 720 - 360;
-        const size = 8 + Math.random() * 12;
-
-        el.style.width = size + 'px';
-        el.style.height = size + 'px';
-
-        el.animate([
-            {
-                transform: `translate(-50%, -50%) rotate(0deg) scale(1)`,
-                opacity: 1
-            },
-            {
-                transform: `translate(calc(-50% + ${vx}px), calc(-50% + ${vy}px)) rotate(${rotate}deg) scale(0.5)`,
-                opacity: 0
+            // Alterna entre o canto inferior esquerdo (0%, 100%) e direito (100%, 100%)
+            const isLeft = (i % 2 === 0);
+            if (isLeft) {
+                el.style.left = '0%';
+                el.style.top = '100%';
+            } else {
+                el.style.left = '100%';
+                el.style.top = '100%';
             }
-        ], {
-            duration: 1200 + Math.random() * 800,
-            delay: Math.random() * 200,
-            easing: 'cubic-bezier(0.25, 1, 0.5, 1)', // Desacelera no final (explosão)
-            fill: 'forwards'
-        }).onfinish = () => el.remove();
-    }
+
+            const container = document.getElementById('confetti-container') || document.body;
+            container.appendChild(el);
+
+            // Define os ângulos para cada canto
+            let angle;
+            if (isLeft) {
+                // Atira para cima e para a direita (-15 a -75 graus)
+                angle = -Math.PI * (0.08 + Math.random() * 0.34);
+            } else {
+                // Atira para cima e para a esquerda (-105 a -165 graus)
+                angle = -Math.PI * (0.58 + Math.random() * 0.34);
+            }
+
+            // Ajustado a força (speed) e escalado dinamicamente para alcançar o topo da tela em qualquer dispositivo
+            const speed = 390 + Math.random() * 240;
+            const vx = Math.cos(angle) * speed * Math.min(1.8, window.innerWidth / 500); // Espalha nas laterais com controle
+            const vy = Math.sin(angle) * speed * (window.innerHeight / 500); // Escala para atingir o topo da tela
+            const rotate = Math.random() * 720 - 360;
+            const size = 8 + Math.random() * 12;
+
+            // Drift horizontal sutil para a flutuação lateral na queda
+            const drift = (Math.random() - 0.5) * 110;
+
+            el.style.width = size + 'px';
+            el.style.height = size + 'px';
+
+            el.animate([
+                {
+                    // 1. LANÇAMENTO (0%): sai do canto com rotação inicial
+                    transform: `translate(-50%, -50%) rotate(0deg) scale(1)`,
+                    opacity: 1,
+                    offset: 0
+                },
+                {
+                    // 2. PRÓXIMO DO ÁPICE (35%): desacelera ao subir perto do topo
+                    transform: `translate(calc(-50% + ${vx * 0.75}px), calc(-50% + ${vy * 0.96}px)) rotate(${rotate * 0.4}deg) scale(1)`,
+                    opacity: 1,
+                    offset: 0.35
+                },
+                {
+                    // 3. ÁPICE FLUTUANTE (50%): flutua no topo da tela com gravidade zero momentânea
+                    transform: `translate(calc(-50% + ${vx * 0.9}px), calc(-50% + ${vy}px)) rotate(${rotate * 0.6}deg) scale(1)`,
+                    opacity: 1,
+                    offset: 0.5
+                },
+                {
+                    // 4. QUEDA LENTA E SUAVE (100%): cai flutuando com drift lateral e desvanece
+                    transform: `translate(calc(-50% + ${vx + drift}px), calc(-50% + ${vy + 320}px)) rotate(${rotate}deg) scale(0.35)`,
+                    opacity: 0,
+                    offset: 1
+                }
+            ], {
+                duration: 2500 + Math.random() * 500, // Duração prolongada (3.8s a 5s) para permanência agradável
+                delay: Math.random() * 200,
+                easing: 'cubic-bezier(0.1, 0.45, 0.25, 1)', // Curva suave e fluida
+                fill: 'forwards'
+            }).onfinish = () => el.remove();
+        }
+    }, 250);
 }
 
 // ── Sensores (Chacoalhar) ───────────────────────────────────────────────
@@ -1291,7 +1349,7 @@ if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => settingsM
 if (versionBtn) {
     versionBtn.addEventListener('click', () => {
         const isHidden = changelogContent.classList.toggle('hidden');
-        versionBtn.textContent = isHidden ? "Versão 0.6.1 ▼" : "Versão 0.6.1 ▲";
+        versionBtn.textContent = isHidden ? "Versão 0.6.2 ▼" : "Versão 0.6.2 ▲";
     });
 }
 
