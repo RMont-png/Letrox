@@ -540,6 +540,7 @@ header {
     height: 100%;
     pointer-events: none;
     z-index: 999999 !important;
+    perspective: 1200px;
 }
 
 .confetti-particle {
@@ -550,6 +551,7 @@ header {
     pointer-events: none;
     top: 50%;
     left: 50%;
+    transform-style: preserve-3d;
 }
 
 /* Footer (Controls) */
@@ -863,11 +865,56 @@ footer {
     animation: popIn 0.3s ease-out;
 }
 
+.modal-icon {
+    width: 130px;
+    height: 130px;
+    object-fit: contain;
+    margin: 0 auto 15px auto;
+    display: block;
+}
+
 .modal-content h2 {
     color: var(--secondary);
     margin-bottom: 15px;
     font-size: 1.8rem;
     text-shadow: 0 2px 0 var(--yellow-shadow);
+}
+
+/* Design exclusivo do modal de Palavra Mestra e Fase Concluída */
+@property --border-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+}
+
+#modal .modal-content {
+    --border-angle: 0deg;
+    background:
+        linear-gradient(to bottom, #112559, #000A22) padding-box,
+        conic-gradient(from var(--border-angle), #FFDE20, #FF8F20, #FFDE20, #FF8F20, #FFDE20) border-box;
+    border: 4px solid transparent;
+    animation: rotateBorder 3s linear infinite;
+}
+
+@keyframes rotateBorder {
+    to {
+        --border-angle: 360deg;
+    }
+}
+
+
+#modal .modal-content h2 {
+    line-height: 1.1;
+    margin-bottom: 28px;
+}
+
+
+#modal .modal-content p {
+    white-space: pre-line;
+}
+
+#modal #modal-btn {
+    width: 82%;
 }
 
 .powers-content h2 {
@@ -888,6 +935,7 @@ footer {
     color: var(--text-main);
     font-size: 1.1rem;
     line-height: 1.4;
+    font-weight: 500;
 }
 
 #modal-btn {

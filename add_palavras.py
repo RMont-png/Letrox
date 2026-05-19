@@ -11,7 +11,7 @@ def sort_key(word):
 path = r"c:\Users\pmont\OneDrive\Área de Trabalho\Letrox\palavras_letrox.json"
 
 words_to_add = [
-    "vocês"
+    "raiar"
 ]
 
 # Ler o arquivo JSON atual

@@ -186,7 +186,9 @@ SoundManager.preload();
 // ── ImageManager ─────────────────────────────────────────────────────────
 const ImageManager = {
     images: [
-        'emoji_kkk.png'
+        'emoji_kkk.png',
+        'emoji palavra mestra.png',
+        'emoji completo.png'
     ],
     _cache: {},
     preload() {
@@ -1079,7 +1081,7 @@ function submitWord() {
                     fireConfetti();
 
                     setTimeout(() => {
-                        showModal("Palavra Mestra encontrada!", "Agora você já pode passar para a próxima fase.", "Continuar", closeModal);
+                        showModal("Palavra Mestra encontrada!", "Agora você já pode passar\npara a próxima fase.", "Continuar", closeModal, "emoji palavra mestra.png");
                     }, 200); // Aparece quase junto com o início da explosão
                 }, 400);
             }
@@ -1089,7 +1091,7 @@ function submitWord() {
                     fireConfetti();
 
                     setTimeout(() => {
-                        showModal("Fase Concluída!", "Parabéns! Você encontrou TODAS as palavras ocultas!", "Próxima Fase", nextLevel);
+                        showModal("Fase Concluída!", "Parabéns! Você encontrou TODAS as palavras ocultas!", "Próxima Fase", nextLevel, "emoji completo.png");
                     }, 200);
                 }, 400);
             }
@@ -1145,11 +1147,29 @@ function nextLevel() {
 }
 
 // Modais
-function showModal(title, text, btnText, callback) {
+function showModal(title, text, btnText, callback, imageUrl = null) {
     ui.modalTitle.textContent = title;
     ui.modalText.textContent = text;
     ui.modalBtn.textContent = btnText;
     ui.modalBtn.onclick = callback;
+
+    // Gerenciamento da imagem/emoji do modal
+    let img = ui.modal.querySelector('.modal-icon');
+    if (imageUrl) {
+        if (!img) {
+            img = document.createElement('img');
+            img.className = 'modal-icon';
+            const content = ui.modal.querySelector('.modal-content');
+            content.insertBefore(img, content.firstChild);
+        }
+        img.src = imageUrl;
+        img.style.display = 'block';
+    } else {
+        if (img) {
+            img.style.display = 'none';
+        }
+    }
+
     ui.modal.classList.remove('hidden');
 }
 
@@ -1187,26 +1207,28 @@ function fireConfetti() {
             '#ffffff'                         // Branco
         ];
 
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+
         for (let i = 0; i < count; i++) {
             const el = document.createElement('div');
             el.className = 'confetti-particle';
             el.style.background = colors[Math.floor(Math.random() * colors.length)];
             el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
 
-            // Alterna entre o canto inferior esquerdo (0%, 100%) e direito (100%, 100%)
+            // Alterna entre o canto inferior esquerdo e direito, com leve dispersão inicial
             const isLeft = (i % 2 === 0);
             if (isLeft) {
-                el.style.left = '0%';
-                el.style.top = '100%';
+                el.style.left = (Math.random() * 6 - 3) + '%'; // Leve dispersão horizontal (-3% a 3%)
             } else {
-                el.style.left = '100%';
-                el.style.top = '100%';
+                el.style.left = (97 + Math.random() * 6) + '%'; // Leve dispersão horizontal (97% a 103%)
             }
+            el.style.top = (98 + Math.random() * 4) + '%'; // Leve dispersão vertical (98% a 102%)
 
             const container = document.getElementById('confetti-container') || document.body;
             container.appendChild(el);
 
-            // Define os ângulos para cada canto
+            // Define os ângulos para cada canto de forma a direcionar para o centro da tela
             let angle;
             if (isLeft) {
                 // Atira para cima e para a direita (-15 a -75 graus)
@@ -1216,48 +1238,85 @@ function fireConfetti() {
                 angle = -Math.PI * (0.58 + Math.random() * 0.34);
             }
 
-            // Ajustado a força (speed) e escalado dinamicamente para alcançar o topo da tela em qualquer dispositivo
-            const speed = 390 + Math.random() * 240;
-            const vx = Math.cos(angle) * speed * Math.min(1.8, window.innerWidth / 500); // Espalha nas laterais com controle
-            const vy = Math.sin(angle) * speed * (window.innerHeight / 500); // Escala para atingir o topo da tela
-            const rotate = Math.random() * 720 - 360;
             const size = 8 + Math.random() * 12;
-
-            // Drift horizontal sutil para a flutuação lateral na queda
-            const drift = (Math.random() - 0.5) * 110;
-
             el.style.width = size + 'px';
             el.style.height = size + 'px';
 
-            el.animate([
-                {
-                    // 1. LANÇAMENTO (0%): sai do canto com rotação inicial
-                    transform: `translate(-50%, -50%) rotate(0deg) scale(1)`,
-                    opacity: 1,
-                    offset: 0
-                },
-                {
-                    // 2. PRÓXIMO DO ÁPICE (35%): desacelera ao subir perto do topo
-                    transform: `translate(calc(-50% + ${vx * 0.75}px), calc(-50% + ${vy * 0.96}px)) rotate(${rotate * 0.4}deg) scale(1)`,
-                    opacity: 1,
-                    offset: 0.35
-                },
-                {
-                    // 3. ÁPICE FLUTUANTE (50%): flutua no topo da tela com gravidade zero momentânea
-                    transform: `translate(calc(-50% + ${vx * 0.9}px), calc(-50% + ${vy}px)) rotate(${rotate * 0.6}deg) scale(1)`,
-                    opacity: 1,
-                    offset: 0.5
-                },
-                {
-                    // 4. QUEDA LENTA E SUAVE (100%): cai flutuando com drift lateral e desvanece
-                    transform: `translate(calc(-50% + ${vx + drift}px), calc(-50% + ${vy + 320}px)) rotate(${rotate}deg) scale(0.35)`,
-                    opacity: 0,
-                    offset: 1
-                }
-            ], {
-                duration: 2500 + Math.random() * 500, // Duração prolongada (3.8s a 5s) para permanência agradável
+            // Geração de trajetórias físicas simuladas por integração numérica (Euler-Cromer com arrasto aerodinâmico)
+            // para alimentar o motor WAAPI nativo do browser de forma 100% fluida e realista.
+            const duration = 2.8 + Math.random() * 1.4; // Duração prolongada para o arco completo
+            const steps = 30;
+            const dt = duration / steps;
+
+            const gravity = 800; // Gravidade realista em pixels/s^2
+            const drag = 1.0 + Math.random() * 0.8; // Arrasto de ar dinâmico (confetes mais leves vs mais pesados)
+
+            // Calculamos a velocidade inicial vertical exata para atingir entre 65% e 95% da altura da tela!
+            // h = (vy^2) / (2 * g) * fator_de_compensacao_do_arrasto
+            const targetHeight = screenHeight * (0.65 + Math.random() * 0.3);
+            const dragCompensation = 1.0 + drag * 0.25; // Compensa a perda de altura causada pelo arrasto
+            const vyRequired = Math.sqrt(2 * gravity * targetHeight) * dragCompensation;
+            const vy = -vyRequired; // Negativo pois sobe no eixo Y do CSS
+
+            // Escalamos a velocidade horizontal para manter as partículas na tela em celulares e espalhar em desktops
+            const horizontalScale = Math.min(1.0, screenWidth / 1100) * (0.8 + Math.random() * 0.4);
+            const vx = (vy / Math.tan(angle)) * horizontalScale;
+
+            // Propriedades de rotação e flutuação lateral (wobble)
+            const rxSpeed = (Math.random() - 0.5) * 800;
+            const rySpeed = (Math.random() - 0.5) * 800;
+            const rzSpeed = (Math.random() - 0.5) * 400;
+
+            const wobbleSpeed = 5 + Math.random() * 10;
+            const wobbleAmount = 3 + Math.random() * 6;
+            const wobblePhase = Math.random() * Math.PI * 2;
+
+            let cx = 0;
+            let cy = 0;
+            let currentVx = vx;
+            let currentVy = vy;
+
+            let rotationX = 0;
+            let rotationY = 0;
+            let rotationZ = 0;
+
+            const keyframes = [];
+
+            for (let step = 0; step <= steps; step++) {
+                const progress = step / steps;
+                const timeElapsed = progress * duration;
+
+                // Ondulação horizontal (flutter / wobble)
+                const currentWobble = Math.sin(wobblePhase + wobbleSpeed * timeElapsed) * wobbleAmount;
+
+                // Escala diminui gradualmente no final para efeito de profundidade
+                const currentScale = 1.0 - progress * 0.5;
+
+                // Opacidade se mantém e desaparece suavemente no último 15% da vida da partícula
+                const currentOpacity = progress < 0.85 ? 1 : (1 - progress) / 0.15;
+
+                keyframes.push({
+                    transform: `translate(calc(-50% + ${cx + currentWobble}px), calc(-50% + ${cy}px)) rotateX(${rotationX}deg) rotateY(${rotationY}deg) rotateZ(${rotationZ}deg) scale(${currentScale})`,
+                    opacity: currentOpacity,
+                    offset: progress
+                });
+
+                // Atualização física para o próximo passo usando física newtoniana com resistência do ar
+                currentVx -= currentVx * drag * dt;
+                currentVy += (gravity - currentVy * drag) * dt;
+
+                cx += currentVx * dt;
+                cy += currentVy * dt;
+
+                rotationX += rxSpeed * dt;
+                rotationY += rySpeed * dt;
+                rotationZ += rzSpeed * dt;
+            }
+
+            el.animate(keyframes, {
+                duration: duration * 1000,
                 delay: Math.random() * 200,
-                easing: 'cubic-bezier(0.1, 0.45, 0.25, 1)', // Curva suave e fluida
+                easing: 'linear', // A física real já modela a aceleração e desaceleração perfeitamente
                 fill: 'forwards'
             }).onfinish = () => el.remove();
         }
@@ -1349,7 +1408,7 @@ if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => settingsM
 if (versionBtn) {
     versionBtn.addEventListener('click', () => {
         const isHidden = changelogContent.classList.toggle('hidden');
-        versionBtn.textContent = isHidden ? "Versão 0.6.2 ▼" : "Versão 0.6.2 ▲";
+        versionBtn.textContent = isHidden ? "Versão 0.6.3 ▼" : "Versão 0.6.3 ▲";
     });
 }
 
