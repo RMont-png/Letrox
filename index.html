@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Letrox</title>
-    <!-- <link rel="manifest" href="manifest.json"> -->
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0f172a">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="stylesheet" href="style.css">
@@ -169,7 +169,7 @@
     <!-- Modal de Confirmação de Saída -->
     <div id="quit-modal" class="hidden">
         <div class="modal-content">
-            <h2> Tem certeza que deseja terminar partida?</h2>
+            <h2>Terminar partida?</h2>
             <p id="quit-modal-text">As palavras não encontradas serão reveladas.</p>
             <div style="display: flex; gap: 10px; margin-top: 8px;">
                 <button id="quit-cancel-btn" class="secondary-btn" style="flex: 1;">Continuar</button>
@@ -220,31 +220,39 @@
                 style="margin-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 15px;">
                 <button id="version-btn"
                     style="background: none; border: none; color: var(--secondary); font-size: 0.9rem; font-weight: bold; cursor: pointer; text-decoration: underline;">Versão
-                    0.6.3 ▼</button>
+                    0.7.0 ▼</button>
                 <div id="changelog-content" class="changelog-content hidden"
                     style="margin-top: 10px; background: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 8px; text-align: left; font-size: 0.85rem; color: #FFFFFF; max-height: 200px; overflow-y: auto;">
 
                     <div style="margin-bottom: 15px;">
-
                         <p style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 5px; font-weight: bold;">
-                            -- TAMO DE CARA NOVA! --</p>
+                            -- SABOR APP! --</p>
                         <ul style="padding-left: 0; list-style-type: none;">
-                            <li style="margin-bottom: 4px;">1- Nova identidade visual, cores, tipografia, ícones e muito
-                                mais!</li>
-                            <li style="margin-bottom: 4px;">2- Correção de bugs.</li>
-                            <li style="margin-bottom: 4px;">3- Adição de palavras ao dicionário do jogo.</li>
-                            <li style="margin-bottom: 4px;">4- Agora as bolinhas giram ao interagir.</li>
-                            <li style="margin-bottom: 4px;">5- Melhoria no espaço preenchido pelas colunas.</li>
-                            <li style="margin-bottom: 4px;">6- Os confetes agora seguem a paleta de cores do jogo.</li>
-                            <li style="margin-bottom: 4px;">7- Corrigido o bug que o jogo ficava sem som depois de um
-                                tempo jogando.</li>
-                            <li style="margin-bottom: 4px;">8- Melhoria nos confetes.</li>
-                            <li style="margin-bottom: 4px;">9- Mudança no som da palavra mestra encontrada.</li>
-                            <li style="margin-bottom: 4px;">10- Correção do bug que fazia o recorde não começar zerado e
-                                melhoria visual no hud.</li>
-                            <li style="margin-bottom: 4px;">11- Mudança de layout dos popups de palavra mestra
-                                encontrada e fase concluída.</li>
+                            <li style="margin-bottom: 4px;">1- Agora vc pode instalar o jogo direto no seu celular!</li>
+                            <li style="margin-bottom: 4px; list-style: none; margin-left: 0; padding-left: 0;">
+                                <span style="display: block; font-size: 0.8rem; color: #ccc; margin: 4px 0 4px 0; line-height: 1.4;">
+                                    No Android: clique na setinha onde tem o link do site, caso não apareça, entre no menu do navegador (normalmente fica no canto superior da tela) e aperte em "Adicionar a tela inicial" ou "Instalar aplicativo"
+                                </span>
+                                <span style="display: block; font-size: 0.8rem; color: #ccc; margin: 4px 0 8px 0; line-height: 1.4;">
+                                    No Iphone: clique em Compartilhar (ícone do quadrado com setinha) e depois em "Adicionar à Tela de Início".
+                                </span>
+                            </li>
+                            <li style="margin-bottom: 4px;">2- Atualização visual em todos os cards do jogo.</li>
+                            <li style="margin-bottom: 4px;">3- Tentativa de correção do bug que fazia o jogo ficar sem som depois de um tempo jogando.</li>
+                            <li style="margin-bottom: 4px;">4- Adição de novas palavras ao dicionário do jogo.</li>
+                            <li style="margin-bottom: 4px;">5- Correção do bug que fazia as bolinha diminuírem demais ao flodar o shuffle.</li>
+                            <li style="margin-bottom: 4px;">6- Adição de um aviso caso o jogador deite o celular.</li>
+                            <li style="margin-bottom: 4px;">7- Correção do som atrasado depois do shuffle.</li>
                         </ul>
+                    </div>
+
+                    <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                        <h3
+                            style="color: #FFFFFF; margin-bottom: 2px; font-size: 0.9rem; text-transform: lowercase; font-weight: 500;">
+                            Versão: 0.6.0</h3>
+                        <p
+                            style="color: var(--secondary); font-size: 0.75rem; margin-bottom: 0; font-weight: bold; opacity: 1;">
+                            -- TAMO DE CARA NOVA! --</p>
                     </div>
 
                     <div style="margin-bottom: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
@@ -297,6 +305,18 @@
             <button id="close-settings-btn" class="secondary-btn" style="margin-top: 15px; width: 100%;">Voltar</button>
         </div>
     </div>
+    <!-- Popup de Orientação Landscape (Bloqueio) -->
+    <div id="landscape-block">
+        <div class="landscape-block-content">
+            <img src="emoji ops.png" alt="Emoji ops" class="landscape-block-icon">
+            <div class="landscape-block-text">
+                <h2>Eita rsrs...</h2>
+                <p>é que ainda não fiz a tela<br>deitada hehe</p>
+                <p class="highlight">pode jogar na vertical por<br>enquanto?</p>
+            </div>
+        </div>
+    </div>
+
     <div id="confetti-container"></div>
 
     <script src="script.js"></script>

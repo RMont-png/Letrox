@@ -1,5 +1,4 @@
 // Registra o Service Worker para transformar em PWA
-/*
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').then(registration => {
@@ -9,7 +8,6 @@ if ('serviceWorker' in navigator) {
         });
     });
 }
-*/
 
 // Estado do Jogo
 const activeGhosts = new Map();
@@ -94,47 +92,88 @@ const SoundManager = {
         'click': [10, 10],
         // 'tap': 8 // Vibração rápida no tap das letras
     },
-    _cache: {},
-    preload() {
-        for (const [name, src] of Object.entries(this.singles)) {
-            const a = new Audio(src);
-            a.load();
-            this._cache[name] = a;
+    _audioCtx: null,
+    _buffers: {},
+    _groupBuffers: {},
+
+    _getContext() {
+        if (!this._audioCtx) {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            this._audioCtx = new Ctx();
+            this._audioCtx.onstatechange = () => {
+                if (this._audioCtx.state === 'suspended') {
+                    this._audioCtx.resume();
+                }
+            };
         }
-        for (const [group, files] of Object.entries(this.groups)) {
-            this._cache[group] = files.map(src => {
-                const a = new Audio(src);
-                a.load();
-                return a;
-            });
-        }
+        return this._audioCtx;
     },
+
+    preload() {
+        this._loadAll();
+    },
+
+    async _loadAll() {
+        try {
+            const ctx = this._getContext();
+
+            for (const [name, src] of Object.entries(this.singles)) {
+                try {
+                    const response = await fetch(src);
+                    const arrayBuffer = await response.arrayBuffer();
+                    this._buffers[name] = await ctx.decodeAudioData(arrayBuffer.slice(0));
+                } catch (e) {}
+            }
+
+            for (const [group, files] of Object.entries(this.groups)) {
+                this._groupBuffers[group] = [];
+                for (const src of files) {
+                    try {
+                        const response = await fetch(src);
+                        const arrayBuffer = await response.arrayBuffer();
+                        const buffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+                        const filename = src.split('/').pop();
+                        this._groupBuffers[group].push({ buffer, filename });
+                    } catch (e) {}
+                }
+            }
+        } catch (e) {}
+    },
+
+    async _playBuffer(buffer, volume) {
+        try {
+            const ctx = this._getContext();
+            if (ctx.state === 'suspended') {
+                await ctx.resume();
+            }
+
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+
+            const gain = ctx.createGain();
+            gain.gain.value = volume;
+
+            source.connect(gain);
+            gain.connect(ctx.destination);
+            source.start(0);
+
+            source.onended = () => {
+                source.disconnect();
+                gain.disconnect();
+            };
+        } catch (e) {}
+    },
+
     play(name) {
         if (!userSettings.sound) return;
-        const a = this._cache[name];
-        if (!a) return;
-        const clone = a.cloneNode();
+        const buffer = this._buffers[name];
+        if (!buffer) return;
 
-        clone.volume = this.volumes[name] !== undefined ? this.volumes[name] : 0.5;
-
-        const cleanup = () => {
-            clone.pause();
-            clone.src = '';
-            clone.load();
-            clone.removeEventListener('ended', cleanup);
-            clone.removeEventListener('error', cleanup);
-        };
-        clone.addEventListener('ended', cleanup);
-        clone.addEventListener('error', cleanup);
-
-        clone.play().catch(() => {
-            cleanup();
-        });
+        const volume = this.volumes[name] !== undefined ? this.volumes[name] : 0.5;
+        this._playBuffer(buffer, volume);
 
         // VIBRAÇÃO
         if (userSettings.vibration && this.vibrations[name]) {
-            // Sons de resultado ganham um pequeno delay para não serem cancelados 
-            // pela vibração de clique (click) que acontece quase simultaneamente
             const resultSounds = ['acerto', 'erro', 'repetida', 'palavra mestra', 'completo'];
             if (resultSounds.includes(name)) {
                 setTimeout(() => {
@@ -145,36 +184,18 @@ const SoundManager = {
             }
         }
     },
+
     playRandom(group) {
         if (!userSettings.sound) return;
-        const pool = this._cache[group];
+        const pool = this._groupBuffers[group];
         if (!pool || !pool.length) return;
-        const a = pool[Math.floor(Math.random() * pool.length)];
-        const clone = a.cloneNode();
 
-        // Extrai o nome do arquivo da URL para buscar o volume específico (ex: "tap 1.mp3")
-        const filename = decodeURIComponent(a.src).split('/').pop();
-
-        // Aplica o volume configurado ou o padrão (0.5)
-        clone.volume = this.volumes[filename] !== undefined ? this.volumes[filename] : 0.5;
-
-        const cleanup = () => {
-            clone.pause();
-            clone.src = '';
-            clone.load();
-            clone.removeEventListener('ended', cleanup);
-            clone.removeEventListener('error', cleanup);
-        };
-        clone.addEventListener('ended', cleanup);
-        clone.addEventListener('error', cleanup);
-
-        clone.play().catch(() => {
-            cleanup();
-        });
+        const entry = pool[Math.floor(Math.random() * pool.length)];
+        const volume = this.volumes[entry.filename] !== undefined ? this.volumes[entry.filename] : 0.5;
+        this._playBuffer(entry.buffer, volume);
 
         // VIBRAÇÃO
         if (userSettings.vibration && this.vibrations[group]) {
-            // Pequeno delay de 30ms para sincronizar a sensação tátil com o início real do áudio
             setTimeout(() => {
                 if (userSettings.vibration) navigator.vibrate(this.vibrations[group]);
             }, 30);
@@ -660,7 +681,9 @@ function animateFLIPGhost(id, char, startRect, destRect, options = {}) {
 
     // Usa um único fator de escala (uniforme) para evitar distorção oval
     // Desconta a borda do StartRect para a escala bater 100% com o tamanho da bolinha
-    const sourceSize = Math.max(10, Math.min(currentStartRect.width, currentStartRect.height) - 8);
+    // Se o source for um fantasma reutilizado (sem borda), não desconta 8px
+    const sourceIsGhost = activeGhosts.has(id) || providedGhost !== null;
+    const sourceSize = Math.max(10, Math.min(currentStartRect.width, currentStartRect.height) - (sourceIsGhost ? 0 : 8));
     let initScale = Math.min(1.4, Math.max(0.4, sourceSize / baseSize));
 
     let normalStartScale = initScale;
@@ -931,9 +954,9 @@ function shuffleDeck() {
             duration: GHOST_DURATION,
             delay: delay,
             arcY,
+            playTapSound: true,
             providedGhost: providedGhost,
             onDone: () => {
-                SoundManager.playRandom('tap');
                 gameState.hiddenDeckSlots.delete(newIdx);
                 const freshSphere = ui.deckArea.querySelector(`.sphere-wrapper[data-deck-index='${newIdx}'] .deck-letter`);
                 if (freshSphere) {
@@ -1014,7 +1037,7 @@ function submitWord() {
         if (wordObj.found) {
             SoundManager.play('repetida');
             showFeedback(ui.inputArea, 'shake');
-            showToast('Você já encontrou<br>essa palavra kkk', 'emoji_kkk.png');
+            showToast('Você <span class="highlight-word">já encontrou</span><br>essa palavra kkk', 'emoji_kkk.png');
             // Retorna ao deck após o feedback com animação
             returnAllLettersWithAnimation(false);
         } else {
@@ -1216,14 +1239,14 @@ function fireConfetti() {
             el.style.background = colors[Math.floor(Math.random() * colors.length)];
             el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
 
-            // Alterna entre o canto inferior esquerdo e direito, com leve dispersão inicial
+            // Alterna entre fora da tela à esquerda e à direita
             const isLeft = (i % 2 === 0);
             if (isLeft) {
-                el.style.left = (Math.random() * 6 - 3) + '%'; // Leve dispersão horizontal (-3% a 3%)
+                el.style.left = (-5 - Math.random() * 3) + '%'; // Fora da tela à esquerda
             } else {
-                el.style.left = (97 + Math.random() * 6) + '%'; // Leve dispersão horizontal (97% a 103%)
+                el.style.left = (103 + Math.random() * 3) + '%'; // Fora da tela à direita
             }
-            el.style.top = (98 + Math.random() * 4) + '%'; // Leve dispersão vertical (98% a 102%)
+            el.style.top = (75 + Math.random() * 10) + '%'; // Altura próxima à base do card
 
             const container = document.getElementById('confetti-container') || document.body;
             container.appendChild(el);
@@ -1245,7 +1268,7 @@ function fireConfetti() {
             // Geração de trajetórias físicas simuladas por integração numérica (Euler-Cromer com arrasto aerodinâmico)
             // para alimentar o motor WAAPI nativo do browser de forma 100% fluida e realista.
             const duration = 2.8 + Math.random() * 1.4; // Duração prolongada para o arco completo
-            const steps = 30;
+            const steps = 18;
             const dt = duration / steps;
 
             const gravity = 800; // Gravidade realista em pixels/s^2
@@ -1408,7 +1431,7 @@ if (closeSettingsBtn) closeSettingsBtn.addEventListener('click', () => settingsM
 if (versionBtn) {
     versionBtn.addEventListener('click', () => {
         const isHidden = changelogContent.classList.toggle('hidden');
-        versionBtn.textContent = isHidden ? "Versão 0.6.3 ▼" : "Versão 0.6.3 ▲";
+        versionBtn.textContent = isHidden ? "Versão 0.7.0 ▼" : "Versão 0.7.0 ▲";
     });
 }
 
