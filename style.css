@@ -295,7 +295,7 @@ header {
     border: none;
     height: 38px;
     padding: 0 16px;
-    min-width: 150px;
+    min-width: 130px;
     border-radius: 10px;
     color: var(--bg-color);
     font-weight: 900;
